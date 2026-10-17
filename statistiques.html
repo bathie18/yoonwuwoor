@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Statistiques et indicateurs — Yoon Wu Wóor</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Boîte à outils › Statistiques et indicateurs</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Statistiques et indicateurs</h1>
+  <p>Le bilan de l'accidentalité routière au Sénégal : évolution, saisonnalité, heures, causes, usagers et grands axes.</p>
+</div></header>
+<main class="sec" style="padding-top:28px">
+  <div class="wrap">
+    <div class="grid g4" id="kpis"></div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card"><h3>Évolution 2021 – 2025</h3><p class="muted" style="margin-bottom:10px">Accidents corporels et personnes tuées.</p><div class="chart-box" style="height:300px"><canvas id="c-evo"></canvas></div><p class="muted" style="font-size:.8rem;margin:8px 0 0">2021–2024 : valeurs de démonstration.</p></div>
+      <div class="card"><h3>Saisonnalité 2025</h3><p class="muted" style="margin-bottom:10px">Décembre, août et octobre concentrent les pics d'accidents ; octobre est le mois le plus meurtrier.</p><div class="chart-box" style="height:300px"><canvas id="c-mois"></canvas></div></div>
+      <div class="card"><h3>Causes des accidents</h3><p class="muted" style="margin-bottom:10px">Part des accidents par cause principale (2025).</p><div class="chart-box" style="height:300px"><canvas id="c-causes"></canvas></div></div>
+      <div class="card"><h3>Tranches horaires</h3><p class="muted" style="margin-bottom:10px">Part des accidents sur les grands axes (2025).</p><div class="chart-box" style="height:300px"><canvas id="c-heures"></canvas></div></div>
+      <div class="card"><h3>Usagers et types de collision</h3><p class="muted" style="margin-bottom:10px">Milieu urbain : part des accidents et part des tués. Les usagers vulnérables pèsent plus dans la mortalité que dans le nombre d'accidents.</p><div class="chart-box" style="height:300px"><canvas id="c-usagers"></canvas></div></div>
+      <div class="card"><h3>Les régions</h3><p class="muted" style="margin-bottom:10px">Accidents et tués par région (2025). Dakar concentre plus de la moitié des accidents ; Thiès compte le plus de tués.</p><div class="chart-box" style="height:300px"><canvas id="c-reg"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>Grands axes</h3>
+      <p class="muted">Les routes nationales et autoroutes regroupent 6 431 accidents en 2025, soit plus de 41 % du total national.</p>
+      <table class="rank" style="margin-top:8px"><thead><tr><th>Axe</th><th>Repère</th><th class="n">Accidents</th><th class="n">Tués</th></tr></thead>
+      <tbody>
+        <tr><td><b>RN1</b></td><td>646 km — 2,25 accidents/km</td><td class="n">1 458</td><td class="n">141</td></tr>
+        <tr><td><b>A1 (autoroute)</b></td><td>≈ 90 km — 15,1 accidents/km</td><td class="n">21 % des axes</td><td class="n">–</td></tr>
+        <tr><td><b>RN3</b></td><td>Thiès – Touba – Linguère</td><td class="n">15 % des axes</td><td class="n">–</td></tr>
+        <tr><td><b>RN2</b></td><td>Rufisque – Saint-Louis – Matam</td><td class="n">10 % des axes</td><td class="n">92</td></tr>
+      </tbody></table>
+      <div class="btns" style="margin-top:16px"><a class="btn btn-d" href="carte.html?couche=zone">Voir les zones accidentogènes</a><a class="btn btn-j" href="dataviz.html">Explorer par territoire</a></div>
+    </div>
+    <p class="note" style="margin-top:18px">Source : ANASER, bilan de l'accidentalité 2025 (publié en février 2026), sauf mention contraire. Répartition mensuelle hors pics publiés et séries 2021–2024 : valeurs de démonstration.</p>
+  </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('stats');
+Chart.defaults.font.family='"Source Sans 3",system-ui,sans-serif';
+const grid={color:'rgba(128,128,128,.15)'};
+const setColor=()=>{Chart.defaults.color=YWW.isDark()?'#a3a9b3':'#535a66'};setColor();
+YWW.json('data/stats.json').then(s=>{
+  const a=s.national[2025],y=s.meta.annees;
+  document.getElementById('kpis').innerHTML=[
+    ['Personnes tuées',a.tues,'#e31b23','soit 2 à 3 par jour'],['Accidents corporels',a.acc,'#f5b700','plus de 42 par jour'],
+    ['Blessés graves',a.bg,'#2a3240','hospitalisés plus de 24 h'],['Blessés légers',a.bl,'#00853f','soins sans hospitalisation longue']
+  ].map(k=>`<div class="card kpi" style="--c:${k[2]}"><div class="v">${YWW.fmt(k[1])}</div><div class="l">${k[0]} (2025)</div><div class="d muted">${k[3]}</div></div>`).join('');
+  new Chart('c-evo',{type:'bar',data:{labels:y,datasets:[
+    {type:'bar',order:1,label:'Accidents',data:y.map(x=>s.national[x].acc),backgroundColor:'#f5b700',borderRadius:4,yAxisID:'y'},
+    {type:'line',order:0,label:'Tués',data:y.map(x=>s.national[x].tues),borderColor:'#e31b23',backgroundColor:'#e31b23',tension:.3,yAxisID:'y1'}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{grid,title:{display:true,text:'Accidents'}},y1:{position:'right',grid:{display:false},title:{display:true,text:'Tués'}}}}});
+  const M=['Janv.','Févr.','Mars','Avr.','Mai','Juin','Juil.','Août','Sept.','Oct.','Nov.','Déc.'];
+  new Chart('c-mois',{type:'bar',data:{labels:M,datasets:[
+    {label:'Accidents',order:1,data:s.mois2025.acc,backgroundColor:s.mois2025.acc.map(v=>v>1350?'#e31b23':'#f5b700'),borderRadius:4,yAxisID:'y'},
+    {type:'line',order:0,label:'Tués',data:s.mois2025.tues,borderColor:'#12161d',backgroundColor:'#12161d',tension:.3,yAxisID:'y1'}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{grid},y1:{position:'right',grid:{display:false}}}}});
+  new Chart('c-causes',{type:'bar',data:{labels:s.causes.map(c=>c[0]),datasets:[{data:s.causes.map(c=>c[1]),backgroundColor:['#e31b23','#f26b2b','#fdae38','#ffd966','#9aa1ac','#6b7280'],borderRadius:4}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' %'}}},scales:{x:{grid,ticks:{callback:v=>v+' %'}},y:{grid:{display:false}}}}});
+  new Chart('c-heures',{type:'bar',data:{labels:s.horaires.map(h=>h[0]),datasets:[{data:s.horaires.map(h=>h[1]),backgroundColor:['#2a3240','#9aa1ac','#fdae38','#e31b23'],borderRadius:6}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' % des accidents'}}},scales:{y:{grid,ticks:{callback:v=>v+' %'}},x:{grid:{display:false}}}}});
+  new Chart('c-usagers',{type:'bar',data:{labels:s.usagers.map(u=>u[0]),datasets:[
+    {label:'Part des accidents',data:s.usagers.map(u=>u[1]),backgroundColor:'#f5b700',borderRadius:4},
+    {label:'Part des tués',data:s.usagers.map(u=>u[2]),backgroundColor:'#e31b23',borderRadius:4}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+' : '+c.raw+' %'}}},scales:{x:{grid,ticks:{callback:v=>v+' %'}},y:{grid:{display:false}}}}});
+  YWW.json('data/regions.geojson').then(g=>{
+    const r=g.features.map(f=>[f.properties.NAME,s.region[f.properties.GID_1][2025]]).sort((a,b)=>b[1].tues-a[1].tues);
+    new Chart('c-reg',{type:'bar',data:{labels:r.map(x=>x[0]),datasets:[
+      {label:'Tués',data:r.map(x=>x[1].tues),backgroundColor:'#e31b23',borderRadius:4,xAxisID:'x'},
+      {label:'Accidents',data:r.map(x=>x[1].acc),backgroundColor:'#f5b70099',borderRadius:4,xAxisID:'x1',hidden:true}]},
+      options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid,position:'bottom'},x1:{display:false},y:{grid:{display:false},ticks:{autoSkip:false,font:{size:11}}}}}});
+  });
+});
+document.addEventListener('themechange',()=>{setColor();Object.values(Chart.instances).forEach(c=>c.update())});
+</script>
+</body>
+</html>

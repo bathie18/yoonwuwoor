@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dataviz des territoires — Yoon Wu Wóor</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Boîte à outils › Dataviz des territoires</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Dataviz des territoires</h1>
+  <p>Comparez l'accidentalité des régions, départements et communes. Cliquez sur un territoire pour afficher sa fiche, son évolution et le classement de ses subdivisions.</p>
+</div></header>
+<main class="sec" style="padding-top:28px">
+  <div class="wrap">
+    <div class="dv-bar">
+      <div class="ctl">Échelle<div class="seg" id="scale"><button data-v="region" aria-pressed="true">Régions</button><button data-v="departement">Départements</button><button data-v="commune">Communes</button></div></div>
+      <label class="ctl">Indicateur<select id="ind">
+        <option value="tues">Personnes tuées</option><option value="acc">Accidents corporels</option><option value="bg">Blessés graves</option><option value="bl">Blessés légers</option>
+        <option value="taux">Tués pour 100 000 habitants</option><option value="grav">Gravité (tués pour 100 accidents)</option></select></label>
+      <label class="ctl">Année<select id="year"></select></label>
+      <label class="ctl" style="flex:1;min-width:200px">Rechercher un territoire<input type="search" id="q" list="terr-list" placeholder="Ex. Mbour, Kaolack, Ngor…"><datalist id="terr-list"></datalist></label>
+    </div>
+    <div class="dv">
+      <div class="dv-map" id="map"></div>
+      <div class="card" id="panel">
+        <div class="eyebrow" id="p-lvl">National</div>
+        <h2 class="terr-title" id="p-name">Sénégal</h2>
+        <div class="terr-sub" id="p-sub"></div>
+        <div class="minis" id="p-minis"></div>
+        <div class="chart-box"><canvas id="p-chart" aria-label="Évolution annuelle"></canvas></div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card"><h3 id="r-title">Classement</h3><p class="muted" id="r-sub" style="margin-bottom:10px"></p><div style="max-height:420px;overflow:auto"><table class="rank" id="rank"></table></div></div>
+      <div class="card"><h3>Comparaison</h3><p class="muted" style="margin-bottom:10px">Les 10 territoires les plus touchés pour l'indicateur choisi.</p><div class="chart-box" style="height:380px"><canvas id="bar"></canvas></div></div>
+    </div>
+    <p class="note" style="margin-top:18px">Totaux nationaux 2025 et chiffres de Dakar, Thiès, Saint-Louis et Matam : ANASER, bilan 2025. Autres valeurs (années antérieures, départements, communes) <b>simulées pour la démonstration</b>. Population : RGPH-5 (régions), estimations 2024 (départements), répartition simulée (communes).</p>
+  </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('outil');
+const S={scale:'region',ind:'tues',year:2025,sel:null};
+const LBL={tues:'Personnes tuées',acc:'Accidents corporels',bg:'Blessés graves',bl:'Blessés légers',taux:'Tués pour 100 000 hab.',grav:'Tués pour 100 accidents'};
+const LVL={region:'Région',departement:'Département',commune:'Commune'};
+const KEY={region:'GID_1',departement:'GID_2',commune:'GID_4'};
+const RAMP=['#fff4cc','#ffd966','#fdae38','#f26b2b','#d7261e','#8c0e14'];
+let ST,GEO={},layer,chart,bar,names={},parentOf={};
+const map=L.map('map',{zoomSnap:.25}).setView([14.4,-14.6],6.5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO'}).addTo(map);
+
+function val(level,id,y,ind){
+  const d=ST[level][id]?.[y]; if(!d) return null;
+  if(ind==='taux'){const p=ST.population[level][id];return p?d.tues/p*1e5:null}
+  if(ind==='grav') return d.acc?d.tues/d.acc*100:null;
+  return d[ind];
+}
+function natVal(y,ind){const d=ST.national[y];const pop=Object.values(ST.population.region).reduce((a,b)=>a+b,0);
+  if(ind==='taux')return d.tues/pop*1e5; if(ind==='grav')return d.tues/d.acc*100; return d[ind];}
+const f=(v,ind)=>['taux','grav'].includes(ind)?YWW.fmt1(v):YWW.fmt(v);
+function breaks(vals){const s=vals.filter(v=>v!=null).sort((a,b)=>a-b);if(!s.length)return[0];return [.2,.4,.6,.8,.92].map(q=>s[Math.floor(q*(s.length-1))]);}
+function color(v,br){if(v==null)return '#ccc';let i=0;while(i<br.length&&v>br[i])i++;return RAMP[i];}
+
+let legend;
+function draw(){
+  if(layer) map.removeLayer(layer);
+  const lvl=S.scale,k=KEY[lvl],g=GEO[lvl];
+  const vals=g.features.map(ft=>val(lvl,ft.properties[k],S.year,S.ind));
+  const br=breaks(vals);
+  layer=L.geoJSON(g,{style:ft=>({fillColor:color(val(lvl,ft.properties[k],S.year,S.ind),br),fillOpacity:.85,color:'#fff',weight:lvl==='commune'?.4:1}),
+    onEachFeature:(ft,l)=>{const id=ft.properties[k];
+      l.bindTooltip(`<b>${ft.properties.NAME}</b><br>${LBL[S.ind]} : ${f(val(lvl,id,S.year,S.ind),S.ind)}`,{sticky:true});
+      l.on('click',()=>select(lvl,id));
+      l.on('mouseover',()=>l.setStyle({weight:2.5,color:'#12161d'}));l.on('mouseout',()=>layer.resetStyle(l));}}).addTo(map);
+  if(legend) map.removeControl(legend);
+  legend=L.control({position:'bottomleft'});
+  legend.onAdd=()=>{const d=L.DomUtil.create('div','legend');const lo=[Math.min(...vals.filter(v=>v!=null)),...br];
+    d.innerHTML=`<b>${LBL[S.ind]} · ${S.year}</b><br>`+RAMP.map((c,i)=>`<i style="background:${c}"></i>${i<RAMP.length-1?f(lo[i],S.ind)+' – '+f(br[i],S.ind):'> '+f(br[br.length-1],S.ind)}`).join('<br>');return d};
+  legend.addTo(map);
+  ranking();
+}
+function children(level,id){
+  if(level==='national') return ['region',Object.keys(ST.region)];
+  if(level==='region') return ['departement',GEO.departement.features.filter(x=>x.properties.GID_1===id).map(x=>x.properties.GID_2)];
+  if(level==='departement') return ['commune',GEO.commune.features.filter(x=>x.properties.GID_2===id).map(x=>x.properties.GID_4)];
+  return ['commune',GEO.commune.features.filter(x=>x.properties.GID_2===parentOf[id]).map(x=>x.properties.GID_4)];
+}
+function ranking(){
+  const s=S.sel||{level:'national'};
+  let [lvl,ids]=children(s.level,s.id);
+  // si aucune sélection : classer l'échelle affichée
+  if(!S.sel){lvl=S.scale;ids=GEO[lvl].features.map(x=>x.properties[KEY[lvl]])}
+  const rows=ids.map(id=>[id,val(lvl,id,S.year,S.ind)]).sort((a,b)=>(b[1]??-1)-(a[1]??-1));
+  const where=S.sel?(S.sel.level==='commune'?'Communes du même département':`${LVL[lvl]}s de : ${names[S.sel.id]}`):`Toutes les ${LVL[lvl].toLowerCase()}s du Sénégal`;
+  document.getElementById('r-title').textContent='Classement — '+LBL[S.ind];
+  document.getElementById('r-sub').textContent=where+' · '+S.year;
+  document.getElementById('rank').innerHTML=`<thead><tr><th>#</th><th>${LVL[lvl]}</th><th class="n">${LBL[S.ind]}</th></tr></thead><tbody>`+
+    rows.map((r,i)=>`<tr data-l="${lvl}" data-id="${r[0]}"${S.sel&&S.sel.id===r[0]?' style="background:var(--surface-2);font-weight:700"':''}><td>${i+1}</td><td>${names[r[0]]}</td><td class="n">${f(r[1],S.ind)}</td></tr>`).join('')+'</tbody>';
+  document.querySelectorAll('#rank tbody tr').forEach(tr=>tr.addEventListener('click',()=>select(tr.dataset.l,tr.dataset.id)));
+  const top=rows.slice(0,10);
+  const data={labels:top.map(r=>names[r[0]]),datasets:[{data:top.map(r=>r[1]),backgroundColor:'#e31b23',borderRadius:4}]};
+  if(bar){bar.data=data;bar.update()}else bar=new Chart(document.getElementById('bar'),{type:'bar',data,options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,.15)'}},y:{grid:{display:false}}}}});
+}
+function select(level,id){
+  S.sel=level==='national'?null:{level,id};
+  const isNat=!S.sel;
+  const get=(y,ind)=>isNat?natVal(y,ind):val(level,id,y,ind);
+  document.getElementById('p-lvl').textContent=isNat?'National':LVL[level];
+  document.getElementById('p-name').textContent=isNat?'Sénégal':names[id];
+  const pop=isNat?Object.values(ST.population.region).reduce((a,b)=>a+b,0):ST.population[level][id];
+  let sub=`Population : ${YWW.fmt(pop)} hab.`;
+  if(!isNat&&level!=='region'){let p=parentOf[id];sub+=` · ${level==='commune'?'Dép. de '+names[p]+' · Région de '+names[parentOf[p]]:'Région de '+names[p]}`}
+  document.getElementById('p-sub').innerHTML=sub+(isNat?'':' · <a href="#" id="back">Revenir au national</a>');
+  const y=S.year,yp=y-1;
+  document.getElementById('p-minis').innerHTML=['tues','acc','bg','taux'].map(ind=>{const v=get(y,ind),p=ST.national[yp]?get(yp,ind):null;const d=p?((v-p)/p*100):null;
+    return `<div class="mini"><b>${f(v,ind)}</b><span>${LBL[ind]} (${y})${d!=null?` · <span class="${d>0?'up':'down'}">${d>0?'+':''}${YWW.fmt1(d)} %</span>`:''}</span></div>`}).join('');
+  const back=document.getElementById('back'); if(back) back.addEventListener('click',e=>{e.preventDefault();select('national')});
+  const yrs=ST.meta.annees;
+  const ds=[{label:'Accidents',data:yrs.map(y=>get(y,'acc')),borderColor:'#f5b700',backgroundColor:'#f5b700',yAxisID:'y',tension:.3},
+            {label:'Tués',data:yrs.map(y=>get(y,'tues')),borderColor:'#e31b23',backgroundColor:'#e31b23',yAxisID:'y1',tension:.3}];
+  if(chart){chart.data.datasets=ds;chart.update()}else chart=new Chart(document.getElementById('p-chart'),{type:'line',data:{labels:yrs,datasets:ds},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'}},scales:{y:{position:'left',title:{display:true,text:'Accidents'},grid:{color:'rgba(128,128,128,.15)'}},y1:{position:'right',title:{display:true,text:'Tués'},grid:{display:false}}}}});
+  // zoom
+  if(!isNat&&layer){const lvlGeo=GEO[level];const ft=lvlGeo.features.find(x=>x.properties[KEY[level]]===id);if(ft)map.fitBounds(L.geoJSON(ft).getBounds(),{maxZoom:level==='commune'?11:9,padding:[30,30]})}
+  else map.fitBounds(L.geoJSON(GEO.region).getBounds());
+  ranking();
+}
+Promise.all(['region','departement','commune'].map(l=>YWW.json(`data/${l==='region'?'regions':l==='departement'?'departements':'communes'}.geojson`))).then(async g=>{
+  [GEO.region,GEO.departement,GEO.commune]=g; ST=await YWW.json('data/stats.json');
+  GEO.region.features.forEach(x=>names[x.properties.GID_1]=x.properties.NAME);
+  GEO.departement.features.forEach(x=>{names[x.properties.GID_2]=x.properties.NAME;parentOf[x.properties.GID_2]=x.properties.GID_1});
+  GEO.commune.features.forEach(x=>{names[x.properties.GID_4]=x.properties.NAME;parentOf[x.properties.GID_4]=x.properties.GID_2});
+  const ys=document.getElementById('year');ST.meta.annees.slice().reverse().forEach(y=>ys.insertAdjacentHTML('beforeend',`<option>${y}</option>`));
+  const dl=document.getElementById('terr-list');
+  const idx={};
+  [['region','Région'],['departement','Département'],['commune','Commune']].forEach(([l,t])=>GEO[l].features.forEach(x=>{const lab=`${x.properties.NAME} (${t})`;idx[lab]=[l,x.properties[KEY[l]]];dl.insertAdjacentHTML('beforeend',`<option value="${lab}">`)}));
+  document.getElementById('q').addEventListener('change',e=>{const r=idx[e.target.value];if(r){setScale(r[0]);select(r[0],r[1])}});
+  document.querySelectorAll('#scale button').forEach(b=>b.addEventListener('click',()=>setScale(b.dataset.v)));
+  document.getElementById('ind').addEventListener('change',e=>{S.ind=e.target.value;draw();S.sel?select(S.sel.level,S.sel.id):select('national')});
+  ys.addEventListener('change',e=>{S.year=+e.target.value;draw();S.sel?select(S.sel.level,S.sel.id):select('national')});
+  const p=new URLSearchParams(location.search);
+  if(p.get('echelle'))setScale(p.get('echelle'));
+  if(p.get('indicateur')){S.ind=p.get('indicateur');document.getElementById('ind').value=S.ind}
+  draw();select('national');
+});
+function setScale(v){S.scale=v;document.querySelectorAll('#scale button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));if(layer)draw()}
+</script>
+</body>
+</html>

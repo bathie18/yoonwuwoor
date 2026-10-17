@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glossaire — Yoon Wu Wóor</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Boîte à outils › Glossaire</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Glossaire</h1>
+  <p>Les définitions utilisées par l'observatoire pour mesurer, analyser et parler de la sécurité routière au Sénégal.</p>
+</div></header>
+<main class="sec" style="padding-top:28px">
+  <div class="wrap" style="max-width:900px">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+      <label class="ctl" style="flex:1;min-width:220px">Rechercher un terme<input type="search" id="q" placeholder="Ex. blessé, gare, point noir…"></label>
+      <label class="ctl">Thème<select id="th"><option value="">Tous les thèmes</option></select></label>
+    </div>
+    <nav class="az" id="az" aria-label="Index alphabétique"></nav>
+    <p class="muted" id="count"></p>
+    <div id="list"></div>
+  </div>
+</main>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('outil');
+const G=[
+['Accident corporel de la circulation','Indicateurs',"Accident survenu sur une voie ouverte à la circulation publique, impliquant au moins un véhicule en mouvement et faisant au moins une victime nécessitant des soins médicaux."],
+['Accident mortel','Indicateurs',"Accident corporel ayant entraîné le décès d'au moins une personne, sur le coup ou dans les 30 jours qui suivent."],
+['Accidentalité','Indicateurs',"Ensemble des accidents survenus sur un territoire et une période donnés, et de leurs conséquences humaines. L'accidentalité se décrit par des effectifs (accidents, tués, blessés) et par des taux."],
+['AGEROUTE','Acteurs',"Agence des travaux et de gestion des routes : maître d'ouvrage délégué de l'État pour la construction, la réhabilitation et l'entretien du réseau routier classé."],
+['ANASER','Acteurs',"Agence nationale de la sécurité routière : chargée de la mise en œuvre de la politique de sécurité routière, de la collecte et de l'analyse des données d'accidents et des actions de prévention."],
+['Auto-école','Usagers & véhicules',"Établissement agréé dispensant la formation théorique (code de la route) et pratique à la conduite, en vue de l'obtention du permis de conduire."],
+['Bilan annuel','Indicateurs',"Publication de référence présentant les chiffres définitifs de l'accidentalité d'une année : effectifs, évolutions, répartitions territoriales, causes et profils des usagers."],
+['Blessé grave','Indicateurs',"Victime hospitalisée plus de 24 heures à la suite d'un accident corporel."],
+['Blessé léger','Indicateurs',"Victime ayant reçu des soins médicaux, sans hospitalisation ou hospitalisée 24 heures au plus."],
+['Car rapide','Usagers & véhicules',"Minibus de transport en commun urbain emblématique de Dakar, reconnaissable à sa peinture bleue et jaune. Progressivement remplacé par des véhicules neufs dans le cadre du renouvellement du parc."],
+['Ceinture de sécurité','Comportements',"Dispositif de retenue obligatoire pour le conducteur et les passagers. Son port réduit fortement le risque de décès en cas de choc frontal ou d'éjection."],
+['CETUD','Acteurs',"Conseil exécutif des transports urbains durables : autorité organisatrice de la mobilité dans la région de Dakar."],
+['Clando','Usagers & véhicules',"Véhicule particulier pratiquant le transport de personnes sans autorisation. Échappant au contrôle technique et à l'assurance obligatoire, il présente un risque accru pour ses passagers."],
+['Collision frontale','Types d\'accidents',"Choc entre deux véhicules circulant en sens inverse. Fréquente lors de dépassements dangereux sur les routes bidirectionnelles, c'est l'un des types d'accidents les plus meurtriers."],
+['Contrôle technique','Usagers & véhicules',"Visite obligatoire et périodique permettant de vérifier l'état d'un véhicule (freins, direction, pneumatiques, éclairage…) avant sa remise en circulation."],
+['Corridor','Infrastructures',"Grand axe routier structurant reliant des pôles économiques ou des pays, supportant un trafic dense de marchandises et de voyageurs (ex. Dakar – Bamako)."],
+['Défaut de maîtrise','Causes',"Perte de contrôle du véhicule par son conducteur, souvent liée à la vitesse, à la fatigue, à l'état de la chaussée ou à une manœuvre inadaptée."],
+['Dépassement dangereux','Causes',"Manœuvre de dépassement réalisée sans visibilité suffisante, sur une ligne continue ou à proximité d'une intersection."],
+['Deux-roues motorisé','Usagers & véhicules',"Cyclomoteur, scooter ou moto (dont les « Jakarta »). Usagers très vulnérables, ils représentent une part importante des victimes en milieu urbain."],
+['Excès de vitesse','Causes',"Circulation à une vitesse supérieure à la limite autorisée ou inadaptée aux conditions (trafic, météo, visibilité)."],
+['Gare routière','Infrastructures',"Lieu aménagé de départ et d'arrivée des transports interurbains de voyageurs (cars, minibus, taxis « 7 places »), où s'organisent le chargement et la régulation des départs."],
+['Gravité','Indicateurs',"Nombre de personnes tuées pour 100 accidents corporels. Elle est généralement plus élevée en rase campagne qu'en agglomération, du fait des vitesses pratiquées."],
+['Indemne','Indicateurs',"Personne impliquée dans un accident corporel qui n'a subi aucune blessure nécessitant des soins."],
+['Jakarta','Usagers & véhicules',"Nom courant donné aux motos de petite cylindrée, utilisées notamment comme moto-taxis dans de nombreuses villes du pays."],
+['Ndiaga Ndiaye','Usagers & véhicules',"Minibus de transport interurbain et urbain, blanc à l'origine, très répandu au Sénégal. Le surchargement et l'âge du parc en font un sujet majeur de sécurité."],
+['Observatoire','Indicateurs',"Dispositif permanent de collecte, de consolidation, d'analyse et de diffusion de données sur un phénomène, ici l'insécurité routière, au service de la décision publique."],
+['Permis à points','Comportements',"Système retirant des points au permis de conduire à chaque infraction ; la perte totale des points entraîne l'invalidation du permis."],
+['Piéton','Usagers & véhicules',"Usager se déplaçant à pied. Peu protégé, il représente une part des tués bien supérieure à sa part dans les accidents."],
+['Point noir','Infrastructures',"Section de route ou intersection concentrant un nombre élevé d'accidents graves sur une période donnée, qui justifie un diagnostic et des aménagements ciblés."],
+['Premiers secours','Secours',"Gestes réalisés par un témoin en attendant les secours : protéger la zone, alerter (pompiers, SAMU), secourir sans déplacer la victime sauf danger immédiat."],
+['Rase campagne','Infrastructures',"Réseau situé en dehors des agglomérations. Les vitesses y étant plus élevées, les accidents y sont moins nombreux mais plus graves."],
+['Route nationale (RN)','Infrastructures',"Route classée du réseau principal reliant les grandes villes et les pays voisins. Les RN1, RN2 et RN3 concentrent une large part des accidents des grands axes."],
+['Surcharge','Causes',"Transport de passagers ou de marchandises au-delà de la capacité autorisée du véhicule, qui dégrade le freinage, la stabilité et aggrave les conséquences d'un accident."],
+['Taux de mortalité','Indicateurs',"Nombre de personnes tuées sur les routes rapporté à la population, généralement exprimé pour 100 000 habitants. Il permet de comparer des territoires de tailles différentes."],
+['Tué','Indicateurs',"Victime décédée sur le coup ou dans les 30 jours suivant l'accident. Cette définition, recommandée au niveau international, permet de comparer les pays."],
+['Usager vulnérable','Usagers & véhicules',"Piéton, cycliste, conducteur de deux-roues ou de charrette : usager peu ou pas protégé par une carrosserie."],
+['Véhicule hippomobile','Usagers & véhicules',"Charrette tirée par un cheval ou un âne, encore très présente sur le réseau, notamment en zone rurale et périurbaine."],
+['Véhicule impliqué','Indicateurs',"Véhicule ayant heurté un autre usager ou un obstacle, ou ayant provoqué l'accident même sans contact."],
+['Victime','Indicateurs',"Personne impliquée dans un accident corporel et décédée ou blessée. Les victimes regroupent les tués, les blessés graves et les blessés légers."],
+['Visibilité','Comportements',"Capacité à voir et à être vu. Éclairage, gilet réfléchissant et feux allumés de jour comme de nuit réduisent les accidents, en particulier entre 18 h et minuit."],
+['Zone accidentogène','Infrastructures',"Secteur présentant une fréquence ou une gravité d'accidents supérieure à la moyenne, identifié par l'analyse spatiale des données d'accidents géolocalisées."],
+['Alcoolémie','Causes',"Taux d'alcool dans le sang. La conduite sous l'emprise de l'alcool ou de stupéfiants altère les réflexes et multiplie le risque d'accident mortel."],
+['Fatigue au volant','Causes',"Baisse de vigilance liée au manque de sommeil ou à la durée de conduite. Particulièrement à risque pour les chauffeurs de longue distance."],
+['Casque','Comportements',"Équipement obligatoire pour les conducteurs et passagers de deux-roues motorisés. Il réduit fortement le risque de traumatisme crânien mortel."],
+['Kilométrage d\'accidents','Indicateurs',"Nombre d'accidents rapporté à la longueur d'un axe (accidents par km). Il permet de comparer des routes de longueurs différentes, comme l'autoroute A1 et la RN1."]
+].sort((a,b)=>a[0].localeCompare(b[0],'fr',{sensitivity:'base'}));
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const th=document.getElementById('th');[...new Set(G.map(g=>g[1]))].sort().forEach(t=>th.insertAdjacentHTML('beforeend',`<option>${t}</option>`));
+function render(){
+  const q=norm(document.getElementById('q').value),t=th.value;
+  const L=G.filter(g=>(!t||g[1]===t)&&(!q||norm(g[0]+' '+g[2]).includes(q)));
+  const by={};L.forEach(g=>{const l=norm(g[0])[0].toUpperCase();(by[l]=by[l]||[]).push(g)});
+  document.getElementById('az').innerHTML='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l=>by[l]?`<a href="#l-${l}">${l}</a>`:`<span>${l}</span>`).join('');
+  document.getElementById('count').textContent=L.length+' définition'+(L.length>1?'s':'');
+  document.getElementById('list').innerHTML=Object.keys(by).sort().map(l=>`<div class="lettre" id="l-${l}">${l}</div><dl class="glo">${by[l].map(g=>`<div><dt>${g[0]}<small>${g[1]}</small></dt><dd>${g[2]}</dd></div>`).join('')}</dl>`).join('')||'<p>Aucun terme ne correspond.</p>';
+}
+document.getElementById('q').addEventListener('input',render);th.addEventListener('change',render);render();
+</script>
+</body>
+</html>

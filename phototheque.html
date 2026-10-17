@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Photothèque — Yoon Wu Wóor</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Boîte à outils › Photothèque</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Photothèque</h1>
+  <p>La banque d'images de l'observatoire : campagnes de prévention, infrastructures, contrôles, secours et éducation routière. Libre de droits pour les partenaires, avec mention de la source.</p>
+</div></header>
+<main class="sec" style="padding-top:28px">
+  <div class="wrap">
+    <p class="note" style="margin-bottom:20px">Prototype : les visuels ci-dessous sont des illustrations de mise en page, destinées à être remplacées par les photographies de l'ANASER, du ministère et des partenaires.</p>
+    <div class="filters" id="filters"></div>
+    <div class="grid g3" id="grid"></div>
+  </div>
+</main>
+<div class="lightbox" id="lb" role="dialog" aria-modal="true"><button aria-label="Fermer">×</button><figure><div id="lb-img"></div><figcaption id="lb-cap" style="padding-top:12px"></figcaption></figure></div>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('outil');
+const sky=(a,b)=>`<defs><linearGradient id="g${a.slice(1)}${b.slice(1)}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="600" height="400" fill="url(#g${a.slice(1)}${b.slice(1)})"/>`;
+const road=(c='#2a3240')=>`<path d="M0 400 L250 210 h100 L600 400z" fill="${c}"/><path d="M300 215v20M300 250v30M300 300v45M300 365v35" stroke="#f5b700" stroke-width="6"/>`;
+const sun=(x,y,c)=>`<circle cx="${x}" cy="${y}" r="38" fill="${c}"/>`;
+const baobab=(x,s=1)=>`<g transform="translate(${x},210) scale(${s})"><path d="M-10 0 C-14 -40 -8 -70 -18 -90 M10 0 C14 -40 8 -70 18 -90" stroke="#3b2f2a" stroke-width="14" fill="none"/><ellipse cx="0" cy="-100" rx="55" ry="22" fill="#4f6b3a"/></g>`;
+const bus=(x,y,c,s=1)=>`<g transform="translate(${x},${y}) scale(${s})"><rect width="150" height="70" rx="10" fill="${c}"/><rect x="10" y="10" width="110" height="24" rx="4" fill="#cfe3ef"/><rect x="128" y="10" width="14" height="40" rx="3" fill="#cfe3ef"/><circle cx="30" cy="72" r="13" fill="#111"/><circle cx="120" cy="72" r="13" fill="#111"/></g>`;
+const person=(x,y,c)=>`<g transform="translate(${x},${y})"><circle r="9" fill="#6b4a36"/><rect x="-9" y="11" width="18" height="34" rx="6" fill="${c}"/><rect x="-8" y="44" width="6" height="24" fill="#222"/><rect x="2" y="44" width="6" height="24" fill="#222"/></g>`;
+const P=[
+ ['Prévention','Campagne « Chaque trajet compte »','Affichage urbain, Dakar',()=>sky('#ffe9b0','#f6c56b')+`<rect x="120" y="70" width="360" height="220" rx="8" fill="#12161d"/><rect x="132" y="82" width="336" height="196" fill="#f5b700"/><text x="300" y="175" text-anchor="middle" font-family="Barlow Condensed,Arial" font-weight="700" font-size="40" fill="#12161d">CHAQUE TRAJET</text><text x="300" y="232" text-anchor="middle" font-family="Barlow Condensed,Arial" font-weight="700" font-size="48" fill="#e31b23">COMPTE</text><rect x="290" y="290" width="20" height="110" fill="#444"/>`],
+ ['Infrastructures','Route nationale au coucher du soleil','RN1, corridor Dakar – Kaolack',()=>sky('#f7a35c','#7b3f61')+sun(420,190,'#ffd34d')+`<rect y="210" width="600" height="190" fill="#c79a5b"/>`+baobab(110)+baobab(520,.7)+road()],
+ ['Gares routières','Départs interurbains','Gare routière, matinée',()=>sky('#bfe3f3','#e9f5fb')+`<rect y="260" width="600" height="140" fill="#cdb48f"/><rect x="40" y="80" width="520" height="30" fill="#00853f"/><rect x="60" y="110" width="8" height="150" fill="#555"/><rect x="532" y="110" width="8" height="150" fill="#555"/>`+bus(70,200,'#ffffff')+bus(260,210,'#f5b700')+bus(420,195,'#2b6cb0',.95)+person(60,300,'#e31b23')+person(560,310,'#00853f')],
+ ['Contrôles','Contrôle technique des véhicules','Centre de contrôle, ligne de freinage',()=>sky('#e7eaee','#cfd5dc')+`<rect y="280" width="600" height="120" fill="#8b939e"/><rect x="60" y="60" width="480" height="40" fill="#2b6cb0"/><text x="300" y="88" text-anchor="middle" font-family="Barlow Condensed,Arial" font-weight="700" font-size="26" fill="#fff">CONTRÔLE TECHNIQUE</text>`+bus(170,210,'#fff',1.2)+person(470,240,'#2b6cb0')+`<rect x="490" y="250" width="34" height="44" rx="3" fill="#fff" stroke="#333"/>`],
+ ['Usagers','Port du casque','Moto-taxi en circulation',()=>sky('#d8eefc','#fff6e0')+road('#3a4352')+`<g transform="translate(250,250)"><circle cx="0" cy="70" r="26" fill="#111"/><circle cx="110" cy="70" r="26" fill="#111"/><path d="M0 70 L40 30 h50 l20 40z" fill="#e31b23"/><rect x="45" y="-15" width="22" height="48" rx="8" fill="#1d4ed8"/><circle cx="56" cy="-30" r="17" fill="#f5b700"/><rect x="40" y="-34" width="32" height="8" rx="3" fill="#12161d"/></g>`],
+ ['Usagers','Traversée piétonne sécurisée','Passage piéton devant une école',()=>sky('#cfeaf8','#eef8fd')+`<rect y="230" width="600" height="170" fill="#3a4352"/>`+[0,1,2,3,4,5,6].map(i=>`<rect x="${120+i*55}" y="270" width="34" height="110" fill="#fff"/>`).join('')+person(230,215,'#f5b700')+person(290,225,'#00853f')+person(350,215,'#e31b23')+`<rect x="470" y="120" width="10" height="120" fill="#555"/><circle cx="475" cy="110" r="26" fill="#2b6cb0"/><path d="M465 120 l10-22 10 22z" fill="#fff"/>`],
+ ['Secours','Intervention des secours','Accident sur un axe interurbain',()=>sky('#2a2f45','#5b4a6a')+road('#232a35')+`<g transform="translate(150,250)"><rect width="190" height="80" rx="8" fill="#fff"/><rect x="0" y="40" width="190" height="10" fill="#e31b23"/><path d="M80 12h14v12h12v14H94v12H80V38H68V24h12z" fill="#e31b23"/><circle cx="35" cy="82" r="14" fill="#111"/><circle cx="155" cy="82" r="14" fill="#111"/><rect x="70" y="-12" width="40" height="12" rx="3" fill="#2b6cb0"/></g><circle cx="190" cy="232" r="40" fill="#2b6cb0" opacity=".25"/>`],
+ ['Prévention','Éducation routière à l\'école','Atelier de sensibilisation, classe de CM2',()=>sky('#fff3d6','#ffe3a3')+`<rect x="60" y="50" width="480" height="180" rx="6" fill="#1f3b2d"/><circle cx="160" cy="140" r="50" fill="#fff" stroke="#e31b23" stroke-width="12"/><text x="160" y="155" text-anchor="middle" font-family="Barlow Condensed" font-weight="700" font-size="40" fill="#111">30</text><path d="M300 190 l50-90 50 90z" fill="#fff" stroke="#e31b23" stroke-width="10"/><rect y="300" width="600" height="100" fill="#c58f53"/>`+person(150,300,'#00853f')+person(250,305,'#f5b700')+person(350,300,'#e31b23')+person(450,305,'#2b6cb0')],
+ ['Infrastructures','Autoroute à péage','Échangeur, trafic de fin de journée',()=>sky('#7fb1d9','#f0c48a')+`<rect y="230" width="600" height="170" fill="#9aa48b"/><path d="M0 330 C200 250 400 250 600 300 L600 340 C400 290 200 290 0 370z" fill="#2a3240"/><path d="M0 300 C200 220 400 220 600 270" stroke="#2a3240" stroke-width="30" fill="none"/><path d="M0 300 C200 220 400 220 600 270" stroke="#f5b700" stroke-width="2" stroke-dasharray="18 14" fill="none"/>`+[80,200,330,460].map((x,i)=>`<rect x="${x}" y="${292-i*14+(i>1?i*12:0)}" width="40" height="18" rx="4" fill="${['#e31b23','#fff','#2b6cb0','#f5b700'][i]}"/>`).join('')]
+];
+const cats=['Toutes',...new Set(P.map(p=>p[0]))];
+const fl=document.getElementById('filters'),grid=document.getElementById('grid');
+const svg=p=>`<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${p[1]}">${p[3]()}</svg>`;
+fl.innerHTML=cats.map((c,i)=>`<button class="chip" aria-pressed="${i===0}" data-c="${c}">${c}</button>`).join('');
+function render(cat){grid.innerHTML=P.map((p,i)=>cat==='Toutes'||p[0]===cat?`<figure class="photo" tabindex="0" data-i="${i}"><div class="img">${svg(p)}</div><figcaption><b>${p[1]}</b><span>${p[0]} · ${p[2]}</span></figcaption></figure>`:'').join('');
+  grid.querySelectorAll('.photo').forEach(f=>{const o=()=>{const p=P[+f.dataset.i];document.getElementById('lb-img').innerHTML=svg(p);document.getElementById('lb-cap').innerHTML=`<b>${p[1]}</b> — ${p[2]}<br><small>Illustration de démonstration · © Yoon Wu Wóor</small>`;lb.classList.add('open')};f.addEventListener('click',o);f.addEventListener('keydown',e=>{if(e.key==='Enter')o()})});}
+fl.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{fl.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));render(b.dataset.c)}));
+const lb=document.getElementById('lb');lb.addEventListener('click',e=>{if(e.target===lb||e.target.tagName==='BUTTON')lb.classList.remove('open')});document.addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('open')});
+render('Toutes');
+</script>
+</body>
+</html>

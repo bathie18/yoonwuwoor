@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yoon Wu Wóor — Observatoire national de la sécurité routière du Sénégal</title>
+<meta name="description" content="Plateforme de référence des données de sécurité routière au Sénégal : chiffres clés, carte des zones accidentogènes, dataviz des territoires, glossaire, quiz.">
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="kicker">Observatoire national de la sécurité routière</div>
+        <h1>Sur nos routes, <em>chaque trajet compte</em></h1>
+        <p class="lead">Yoon Wu Wóor — « la route sûre » — rassemble les données de l'accidentalité routière au Sénégal pour éclairer l'action publique, mobiliser les acteurs et informer chaque citoyen, de la commune à la nation.</p>
+        <div class="btns">
+          <a class="btn btn-j" href="dataviz.html">Explorer mon territoire</a>
+          <a class="btn btn-o" href="carte.html">Voir la carte des risques</a>
+        </div>
+      </div>
+      <aside class="hero-counter" aria-label="Bilan 2025">
+        <div class="big" id="h-tues">868<small>personnes tuées sur les routes en 2025</small></div>
+        <ul>
+          <li><b id="h-acc">15 407</b><span>accidents corporels</span></li>
+          <li><b id="h-bg">5 592</b><span>blessés graves</span></li>
+          <li><b>2 à 3</b><span>décès chaque jour</span></li>
+        </ul>
+        <div class="src">Source : ANASER, bilan 2025.</div>
+      </aside>
+    </div>
+    <div class="road"></div>
+  </section>
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><div class="eyebrow">Chiffres clés 2025</div><h2 class="mb0">L'accidentalité en un coup d'œil</h2></div>
+        <a class="btn btn-d" href="statistiques.html">Tous les indicateurs</a>
+      </div>
+      <div class="grid g4" id="kpis"></div>
+      <div class="grid g3" style="margin-top:18px">
+        <div class="card"><div class="eyebrow">Premier facteur</div><h3>Non-respect des règles</h3><p>30 % des accidents et environ 40 % des décès sont liés au non-respect des règles de conduite.</p></div>
+        <div class="card"><div class="eyebrow">Axe le plus touché</div><h3>RN1 : 1 458 accidents</h3><p>Près d'un quart des accidents des grands axes, 141 tués sur ses 646 km.</p></div>
+        <div class="card"><div class="eyebrow">Heures à risque</div><h3>18 h – minuit</h3><p>37 % des accidents des grands axes surviennent en soirée, quand fatigue et visibilité se dégradent.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec-alt">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Boîte à outils</div><h2 class="mb0">Comprendre, partager, sensibiliser</h2></div><p>Des ressources ouvertes aux élus, services de l'État, forces de sécurité, transporteurs, chercheurs, journalistes et citoyens.</p></div>
+      <div class="grid g3" id="tools"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="wrap grid g2" style="align-items:center;gap:40px">
+      <div>
+        <div class="eyebrow">Carte interactive</div>
+        <h2>Où se produisent les accidents ?</h2>
+        <p class="muted">Zones accidentogènes, centres de contrôle technique, auto-écoles, gares routières et centres de secours : une carte unique pour localiser les risques et les services, superposée au réseau des routes nationales.</p>
+        <div class="btns"><a class="btn btn-d" href="carte.html">Ouvrir la carte</a><a class="btn" style="border-color:var(--bord)" href="cartotheque.html">Cartothèque</a></div>
+      </div>
+      <a href="carte.html" class="card" style="padding:0;overflow:hidden" aria-label="Aperçu de la carte">
+        <svg id="mini-map" viewBox="0 0 600 420" style="display:block;width:100%;background:var(--surface-2)"></svg>
+      </a>
+    </div>
+  </section>
+
+  <section class="sec sec-alt">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Actualités</div><h2 class="mb0">Les dernières publications</h2></div></div>
+      <div class="grid g3">
+        <article class="card actu"><span class="tag">Bilan annuel</span><h3>Bilan 2025 : 868 tués, 15 407 accidents</h3><p>Hausse de la mortalité routière, concentration des accidents à Dakar et des décès sur les corridors interurbains.</p><time>Février 2026</time></article>
+        <article class="card actu"><span class="tag">Dataviz</span><h3>Votre commune à la loupe</h3><p>Les indicateurs d'accidentalité sont désormais consultables à l'échelle régionale, départementale et communale.</p><time>Démonstration</time></article>
+        <article class="card actu"><span class="tag">Prévention</span><h3>Grands départs : vigilance sur les corridors</h3><p>Les périodes de fêtes et de grands rassemblements concentrent les pics d'accidents : décembre est le mois le plus accidentogène.</p><time>Démonstration</time></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="acteurs">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Une vitrine partagée</div><h2 class="mb0">Les acteurs de la sécurité routière</h2></div><p>L'observatoire valorise l'action du ministère en charge des Transports terrestres et de l'ensemble des acteurs de la chaîne de sécurité routière.</p></div>
+      <div class="acteurs">
+        <div class="acteur"><span class="sig" style="background:#00853f">MTT</span><span><b>Ministère des Transports terrestres</b><small>Pilotage de la politique nationale</small></span></div>
+        <div class="acteur"><span class="sig" style="background:#e31b23">ANASER</span><span><b>Agence nationale de la sécurité routière</b><small>Collecte, analyse, prévention</small></span></div>
+        <div class="acteur"><span class="sig">DTR</span><span><b>Direction des transports routiers</b><small>Permis, immatriculation, contrôle</small></span></div>
+        <div class="acteur"><span class="sig">CETUD</span><span><b>Conseil exécutif des transports urbains durables</b><small>Mobilité urbaine de Dakar</small></span></div>
+        <div class="acteur"><span class="sig">AGR</span><span><b>AGEROUTE</b><small>Infrastructures et entretien routier</small></span></div>
+        <div class="acteur"><span class="sig" style="background:#2a3240">PN</span><span><b>Police nationale</b><small>Constat, contrôle, sécurité urbaine</small></span></div>
+        <div class="acteur"><span class="sig" style="background:#2a3240">GN</span><span><b>Gendarmerie nationale</b><small>Sécurité des axes interurbains</small></span></div>
+        <div class="acteur"><span class="sig" style="background:#e31b23">BNSP</span><span><b>Sapeurs-pompiers</b><small>Secours aux victimes</small></span></div>
+        <div class="acteur"><span class="sig">SAMU</span><span><b>SAMU national</b><small>Prise en charge médicale</small></span></div>
+        <div class="acteur"><span class="sig">CL</span><span><b>Collectivités territoriales</b><small>Voirie locale, aménagements</small></span></div>
+        <div class="acteur"><span class="sig">TR</span><span><b>Transporteurs & syndicats</b><small>Formation, discipline, flottes</small></span></div>
+        <div class="acteur"><span class="sig">AE</span><span><b>Auto-écoles & assureurs</b><small>Éducation, prévention du risque</small></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec-alt" id="apropos">
+    <div class="wrap grid g2" style="gap:40px">
+      <div>
+        <div class="eyebrow">À propos</div>
+        <h2>Observer pour agir</h2>
+        <p>Yoon Wu Wóor (« la route sûre » en wolof) est conçu comme l'observatoire de référence de la sécurité routière au Sénégal. Il centralise les données des accidents corporels, les met en cohérence et les restitue sous forme d'indicateurs, de cartes et de visualisations accessibles à tous.</p>
+        <p>Ses missions : produire le bilan annuel de l'accidentalité, suivre les objectifs nationaux de réduction de la mortalité, outiller les territoires pour cibler leurs actions, et sensibiliser le grand public.</p>
+      </div>
+      <div class="card">
+        <h3>Ce prototype</h3>
+        <p style="margin-bottom:12px">Démonstrateur conçu par le CEGIT pour illustrer la plateforme cible. Il repose sur des technologies ouvertes (Leaflet, Chart.js, GeoJSON) et peut être raccordé à une base PostGIS, un WebSIG QWC2/Lizmap et aux flux de données des forces de sécurité.</p>
+        <div class="note">Les totaux nationaux 2025 et plusieurs chiffres régionaux proviennent du bilan de l'ANASER. Les données par département, par commune et les points de la carte sont <b>simulés</b> pour la démonstration.</div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('index');
+const tools=[['quiz.html','quiz','Quiz','Code de la route, comportements, premiers secours : 12 questions pour tester vos réflexes.'],
+['cartotheque.html','carto','Cartothèque','Cartes thématiques nationales et régionales, prêtes à imprimer ou à intégrer.'],
+['phototheque.html','photo','Photothèque','Campagnes de prévention, infrastructures, terrain : la banque d\'images de l\'observatoire.'],
+['glossaire.html','glo','Glossaire','Accident corporel, tué à 30 jours, point noir, gare routière… toutes les définitions.'],
+['statistiques.html','stats','Statistiques & indicateurs','Évolution, causes, mois, heures, usagers et axes : le bilan détaillé.'],
+['dataviz.html','dataviz','Dataviz des territoires','Comparez régions, départements et communes et accédez à la fiche de votre territoire.']];
+document.getElementById('tools').innerHTML=tools.map(t=>`<a class="card tool" href="${t[0]}"><div class="ic">${YWW.I[t[1]]}</div><h3>${t[2]}</h3><p>${t[3]}</p><span class="go">Accéder</span></a>`).join('');
+YWW.json('data/stats.json').then(s=>{
+  const n=s.national, a=n[2025], b=n[2024];
+  const pct=(x,y)=>((x-y)/y*100);
+  const k=[['Personnes tuées',a.tues,b.tues,'#e31b23'],['Accidents corporels',a.acc,b.acc,'#f5b700'],['Blessés graves',a.bg,b.bg,'#2a3240'],['Blessés légers',a.bl,b.bl,'#00853f']];
+  document.getElementById('kpis').innerHTML=k.map(x=>{const p=pct(x[1],x[2]);return `<div class="card kpi" style="--c:${x[3]}"><div class="v">${YWW.fmt(x[1])}</div><div class="l">${x[0]}</div><div class="d ${p>0?'up':'down'}">${p>0?'▲':'▼'} ${YWW.fmt1(Math.abs(p))} % vs 2024*</div></div>`}).join('')
+  +'<p class="muted" style="grid-column:1/-1;font-size:.8rem;margin:0">* Valeurs 2024 de démonstration, à remplacer par le bilan officiel.</p>';
+});
+// mini carte SVG
+Promise.all([YWW.json('data/regions.geojson'),YWW.json('data/routes.geojson'),YWW.json('data/points.geojson')]).then(([r,ro,p])=>{
+  const W=600,H=420,b=[-17.6,12.25,-11.3,16.75];
+  const sx=x=>(x-b[0])/(b[2]-b[0])*W, sy=y=>H-(y-b[1])/(b[3]-b[1])*H*0.97-6;
+  const path=c=>c.map(r=>'M'+r.map(p=>sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1)).join('L')+'Z').join('');
+  let s='';
+  r.features.forEach(f=>{const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;s+=`<path d="${polys.map(path).join('')}" fill="var(--surface)" stroke="var(--bord)" stroke-width="1.2"/>`});
+  ro.features.forEach(f=>{const g=f.geometry;const ls=g.type==='LineString'?[g.coordinates]:g.coordinates;s+=`<path d="${ls.map(l=>'M'+l.map(p=>sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1)).join('L')).join('')}" fill="none" stroke="#f5b700" stroke-width="2"/>`});
+  p.features.filter(f=>f.properties.cat==='zone').forEach(f=>{const c=f.geometry.coordinates;s+=`<circle cx="${sx(c[0]).toFixed(1)}" cy="${sy(c[1]).toFixed(1)}" r="${2+f.properties.grav*1.6}" fill="#e31b23" fill-opacity=".55"/>`});
+  document.getElementById('mini-map').innerHTML=s;
+});
+</script>
+</body>
+</html>

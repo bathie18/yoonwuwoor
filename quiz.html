@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz sécurité routière — Yoon Wu Wóor</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Boîte à outils › Quiz</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Quiz : êtes-vous un usager sûr ?</h1>
+  <p>12 questions sur les chiffres, les comportements et les bons réflexes. Idéal pour les écoles, les auto-écoles et les campagnes de sensibilisation.</p>
+</div></header>
+<main class="sec" style="padding-top:34px">
+  <div class="wrap"><div class="quiz card" id="quiz" style="padding:30px"></div></div>
+</main>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('outil');
+const Q=[
+['Combien de personnes ont été tuées sur les routes du Sénégal en 2025 ?',['Environ 300','Environ 550','868','Plus de 2 000'],2,"Le bilan 2025 de l'ANASER fait état de 868 tués, soit 2 à 3 décès par jour."],
+['Quelle est la première cause d\'accidents relevée en 2025 ?',['La défaillance mécanique','Le non-respect des règles de conduite','Les animaux en divagation','La météo'],1,"Le non-respect des règles de conduite explique 30 % des accidents et environ 40 % des décès."],
+['À quel moment de la journée survient la plus grande part des accidents sur les grands axes ?',['Entre minuit et 6 h','Entre 6 h et midi','Entre midi et 18 h','Entre 18 h et minuit'],3,"37 % des accidents des grands axes se produisent entre 18 h et minuit : fatigue, trafic et baisse de visibilité se cumulent."],
+['Un témoin découvre un accident. Quel est le bon ordre des gestes ?',['Secourir, alerter, protéger','Protéger, alerter, secourir','Alerter, secourir, protéger','Déplacer la victime puis alerter'],1,"On protège d'abord la zone pour éviter un sur-accident, on alerte les secours, puis on porte assistance sans déplacer la victime sauf danger immédiat."],
+['Qu\'est-ce qu\'un « tué » au sens des statistiques internationales ?',['Une personne décédée sur le coup uniquement','Une personne décédée dans les 30 jours suivant l\'accident','Une personne décédée dans l\'année','Un blessé hospitalisé'],1,"La définition à 30 jours permet de comparer les pays et de ne pas sous-estimer la mortalité."],
+['Quelle route nationale a enregistré le plus d\'accidents en 2025 ?',['RN1','RN2','RN6','RN7'],0,"La RN1 compte 1 458 accidents et 141 tués, soit près d'un quart des accidents des grands axes."],
+['Pour un conducteur de moto, quel équipement réduit le plus le risque de décès ?',['Des gants','Un gilet','Un casque attaché','Des chaussures fermées'],2,"Le casque, correctement attaché, réduit fortement le risque de traumatisme crânien mortel."],
+['Le téléphone au volant multiplie le risque d\'accident…',['Il n\'a pas d\'effet si l\'on parle en kit mains libres','Par environ 3 lorsqu\'on téléphone, bien davantage lorsqu\'on écrit un message','Uniquement la nuit','Uniquement en ville'],1,"Téléphoner détourne l'attention, même en mains libres ; lire ou écrire un message détourne aussi le regard de la route."],
+['Dans quelle région se produisent plus de la moitié des accidents ?',['Thiès','Kaolack','Dakar','Saint-Louis'],2,"Dakar concentre 8 503 accidents en 2025, soit environ 55 % du total national, mais Thiès compte davantage de tués."],
+['Pourquoi les accidents en rase campagne sont-ils plus graves qu\'en ville ?',['Les routes y sont plus larges','Les vitesses pratiquées y sont plus élevées','Il y a moins de piétons','Les véhicules y sont plus récents'],1,"L'énergie d'un choc croît avec le carré de la vitesse : à vitesse élevée, les conséquences sont bien plus lourdes."],
+['Quel usager est le plus vulnérable dans la circulation ?',['Le conducteur d\'un camion','Le passager d\'un car','Le piéton','Le conducteur d\'une voiture'],2,"Le piéton n'est protégé par aucune carrosserie : il représente 4 % des accidents urbains mais 17 % des tués."],
+['Quel est le mois le plus accidentogène en 2025 ?',['Janvier','Mai','Août','Décembre'],3,"Décembre compte 1 558 accidents (plus de 10 % du total), période de fêtes et de nombreux déplacements."]
+];
+let i=0,score=0;const el=document.getElementById('quiz');
+function show(){
+  if(i>=Q.length) return end();
+  const q=Q[i];
+  el.innerHTML=`<div class="q-prog"><i style="width:${i/Q.length*100}%"></i></div>
+    <div class="eyebrow">Question ${i+1} / ${Q.length}</div><h2 style="font-size:1.8rem;text-transform:none">${q[0]}</h2>
+    <div class="q-opts">${q[1].map((o,k)=>`<button data-k="${k}"><span class="k">${'ABCD'[k]}</span>${o}</button>`).join('')}</div>
+    <div class="q-exp" id="exp"></div>
+    <div class="btns" style="justify-content:flex-end"><button class="btn btn-d" id="next" hidden>${i<Q.length-1?'Question suivante':'Voir mon score'} →</button></div>`;
+  el.querySelectorAll('.q-opts button').forEach(b=>b.addEventListener('click',()=>{
+    const k=+b.dataset.k,ok=k===q[2]; if(ok)score++;
+    el.querySelectorAll('.q-opts button').forEach(x=>{x.disabled=true;if(+x.dataset.k===q[2])x.classList.add('ok')});
+    if(!ok)b.classList.add('ko');
+    const e=document.getElementById('exp');e.innerHTML=`<b>${ok?'Bonne réponse !':'Pas tout à fait.'}</b> ${q[3]}`;e.classList.add('show');
+    const n=document.getElementById('next');n.hidden=false;n.focus();n.onclick=()=>{i++;show()};
+  }));
+}
+function end(){
+  const p=Math.round(score/Q.length*100);
+  const msg=p>=80?'Excellent ! Vous êtes un usager averti.':p>=50?'Bien ! Quelques réflexes à consolider.':'Les routes vous réservent encore des surprises : relisez le glossaire !';
+  el.innerHTML=`<div class="q-prog"><i style="width:100%"></i></div><div style="text-align:center">
+    <div class="eyebrow">Résultat</div><div style="font:700 5rem var(--f-titre);line-height:1">${score}<span style="font-size:.4em;color:var(--texte-2)"> / ${Q.length}</span></div>
+    <h2 style="font-size:1.8rem;text-transform:none;margin-top:12px">${msg}</h2>
+    <div class="btns" style="justify-content:center"><button class="btn btn-j" id="again">Recommencer</button><a class="btn btn-d" href="glossaire.html">Ouvrir le glossaire</a></div></div>`;
+  document.getElementById('again').onclick=()=>{i=0;score=0;show()};
+}
+show();
+</script>
+</body>
+</html>

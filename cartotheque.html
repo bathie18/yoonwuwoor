@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cartothèque — Yoon Wu Wóor</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Boîte à outils › Cartothèque</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Cartothèque</h1>
+  <p>Des cartes thématiques prêtes à l'emploi pour vos rapports, présentations et campagnes. Téléchargez-les au format vectoriel (SVG) ou ouvrez-les en version interactive.</p>
+</div></header>
+<main class="sec" style="padding-top:28px">
+  <div class="wrap">
+    <div class="filters" id="filters"></div>
+    <div class="grid g3" id="cards"></div>
+  </div>
+</main>
+<script src="assets/js/common.js"></script>
+<script>
+YWW.mount('outil');
+const RAMP=['#fff4cc','#ffd966','#fdae38','#f26b2b','#d7261e','#8c0e14'];
+Promise.all(['regions','departements','routes','points'].map(n=>YWW.json(`data/${n}.geojson`)).concat([YWW.json('data/stats.json')])).then(([reg,dep,rou,pts,st])=>{
+  const W=600,H=450,b=[-17.6,12.2,-11.3,16.75];
+  const kx=Math.cos(14.5*Math.PI/180),k=Math.min((W-30)/((b[2]-b[0])*kx),(H-80)/(b[3]-b[1])),ox=(W-(b[2]-b[0])*kx*k)/2,oy=44+((H-80)-(b[3]-b[1])*k)/2;
+  const sx=x=>ox+(x-b[0])*kx*k, sy=y=>oy+(b[3]-y)*k;
+  const pth=g=>{const P=g.type==='Polygon'?[g.coordinates]:g.coordinates;return P.map(p=>p.map(r=>'M'+r.map(c=>sx(c[0]).toFixed(1)+','+sy(c[1]).toFixed(1)).join('L')+'Z').join('')).join('')};
+  const lin=g=>{const L=g.type==='LineString'?[g.coordinates]:g.coordinates;return L.map(l=>'M'+l.map(c=>sx(c[0]).toFixed(1)+','+sy(c[1]).toFixed(1)).join('L')).join('')};
+  const frame=(title,inner,legend)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Source Sans 3, Arial, sans-serif"><rect width="${W}" height="${H}" fill="#f4f1ea"/>${inner}
+    <text x="18" y="28" font-size="18" font-weight="700" fill="#12161d">${title}</text>${legend||''}
+    <text x="18" y="${H-12}" font-size="10" fill="#6b7280">Yoon Wu Wóor · Observatoire national de la sécurité routière · données de démonstration</text></svg>`;
+  const choro=(layer,lvl,key,ind,y)=>{
+    const v=f=>{const d=st[lvl][f.properties[key]][y];if(ind==='taux')return d.tues/st.population[lvl][f.properties[key]]*1e5;return d[ind]};
+    const vals=layer.features.map(v).sort((a,c)=>a-c);const br=[.2,.4,.6,.8,.92].map(q=>vals[Math.floor(q*(vals.length-1))]);
+    const col=x=>{let i=0;while(i<br.length&&x>br[i])i++;return RAMP[i]};
+    const leg=`<g transform="translate(${W-118},48)"><text font-size="11" font-weight="700" fill="#12161d">${ind==='taux'?'Tués / 100 000 hab.':ind==='tues'?'Personnes tuées':'Accidents'}</text>${RAMP.map((c,i)=>`<rect y="${8+i*15}" width="14" height="11" fill="${c}"/><text x="20" y="${17+i*15}" font-size="10" fill="#333">${i===0?'≤ '+Math.round(br[0]):i===RAMP.length-1?'> '+Math.round(br[4]):Math.round(br[i-1])+' – '+Math.round(br[i])}</text>`).join('')}</g>`;
+    return [layer.features.map(f=>`<path d="${pth(f.geometry)}" fill="${col(v(f))}" stroke="#fff" stroke-width="${lvl==='region'?1.2:.6}"/>`).join(''),leg];
+  };
+  const base=reg.features.map(f=>`<path d="${pth(f.geometry)}" fill="#fff" stroke="#c9c2b4" stroke-width="1"/>`).join('');
+  const roads=rou.features.map(f=>`<path d="${lin(f.geometry)}" fill="none" stroke="#f5b700" stroke-width="2.5"/>`).join('');
+  const dots=(cat,color,r)=>pts.features.filter(f=>f.properties.cat===cat).map(f=>`<circle cx="${sx(f.geometry.coordinates[0]).toFixed(1)}" cy="${sy(f.geometry.coordinates[1]).toFixed(1)}" r="${r(f.properties)}" fill="${color}" fill-opacity=".8" stroke="#fff" stroke-width=".8"/>`).join('');
+  const leg1=(items)=>`<g transform="translate(${W-170},56)">${items.map((it,i)=>`<circle cx="7" cy="${i*18}" r="6" fill="${it[0]}"/><text x="18" y="${i*18+4}" font-size="11" fill="#333">${it[1]}</text>`).join('')}</g>`;
+  const C=[];
+  let [i1,l1]=choro(reg,'region','GID_1','tues',2025);C.push(['Mortalité routière par région','Accidentalité','Nationale','2025',frame('Personnes tuées par région — 2025',i1,l1),'dataviz.html?echelle=region&indicateur=tues']);
+  [i1,l1]=choro(reg,'region','GID_1','taux',2025);C.push(['Taux de mortalité par région','Accidentalité','Nationale','2025',frame('Tués pour 100 000 habitants — 2025',i1,l1),'dataviz.html?echelle=region&indicateur=taux']);
+  [i1,l1]=choro(dep,'departement','GID_2','acc',2025);C.push(['Accidents par département','Accidentalité','Départementale','2025',frame('Accidents corporels par département — 2025',i1,l1),'dataviz.html?echelle=departement&indicateur=acc']);
+  [i1,l1]=choro(dep,'departement','GID_2','tues',2025);C.push(['Tués par département','Accidentalité','Départementale','2025',frame('Personnes tuées par département — 2025',i1,l1),'dataviz.html?echelle=departement&indicateur=tues']);
+  C.push(['Zones accidentogènes et routes nationales','Risques','Nationale','2021–2025',frame('Zones accidentogènes sur le réseau national',base+roads+dots('zone','#e31b23',p=>2+p.grav*2),leg1([['#e31b23','Zone accidentogène'],['#f5b700','Route nationale']])),'carte.html?couche=zone']);
+  C.push(['Réseau routier national','Infrastructures','Nationale','2025',frame('Les routes nationales du Sénégal',base+roads.replaceAll('stroke-width="2.5"','stroke-width="3.5"'),leg1([['#f5b700','Route nationale (RN1 à RN9)']])),'carte.html?couche=routes']);
+  C.push(['Gares routières','Services','Nationale','2025',frame('Les gares routières',base+roads.replaceAll('#f5b700','#e9dcb0')+dots('gare','#00853f',()=>6),leg1([['#00853f','Gare routière']])),'carte.html?couche=gare']);
+  C.push(['Contrôle technique et secours','Services','Nationale','2025',frame('Centres de contrôle technique et de secours',base+dots('cct','#2b6cb0',()=>6)+dots('secours','#ff6b00',()=>4),leg1([['#2b6cb0','Contrôle technique'],['#ff6b00','Centre de secours']])),'carte.html?couche=cct']);
+  C.push(['Auto-écoles','Services','Nationale','2025',frame('Les auto-écoles',base+dots('autoecole','#7b3fbf',()=>4),leg1([['#7b3fbf','Auto-école']])),'carte.html?couche=autoecole']);
+  const cats=['Toutes',...new Set(C.map(c=>c[1]))];
+  const fl=document.getElementById('filters');
+  fl.innerHTML=cats.map((c,i)=>`<button class="chip" aria-pressed="${i===0}" data-c="${c}">${c}</button>`).join('');
+  const render=cat=>{document.getElementById('cards').innerHTML=C.map((c,i)=>(cat==='Toutes'||c[1]===cat)?`<article class="card mapcard"><div class="thumb">${c[4]}</div><div class="body"><h3 style="font-size:1.25rem;margin:0">${c[0]}</h3><div class="meta"><span>${c[1]}</span><span>· Échelle ${c[2].toLowerCase()}</span><span>· ${c[3]}</span></div><div class="acts"><a class="p" href="${c[5]}">Ouvrir</a><button data-i="${i}">Télécharger (SVG)</button></div></div></article>`:'').join('');
+    document.querySelectorAll('.acts button').forEach(b=>b.addEventListener('click',()=>{const c=C[+b.dataset.i];const u=URL.createObjectURL(new Blob([c[4]],{type:'image/svg+xml'}));const a=document.createElement('a');a.href=u;a.download='yoonwuwoor-'+c[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-')+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}));};
+  fl.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{fl.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));render(b.dataset.c)}));
+  render('Toutes');
+});
+</script>
+</body>
+</html>
