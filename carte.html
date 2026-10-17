@@ -14,91 +14,291 @@
 </head>
 <body>
 <main class="map-layout">
-  <aside class="map-side">
+  <aside class="map-side" aria-label="Couches et outils">
     <h2 style="font-size:1.9rem;margin-bottom:6px">Carte du Sénégal</h2>
-    <p class="muted" style="font-size:.92rem">Risques routiers et services aux usagers. Cliquez sur un point pour le détail.</p>
-    <label class="ctl" style="margin:14px 0">Aller à une région
-      <select id="go"><option value="">Tout le Sénégal</option></select>
-    </label>
-    <div class="eyebrow" style="margin-top:18px">Risques</div>
+    <p class="muted" style="font-size:.92rem;margin-bottom:0">Accidents, risques, services aux usagers et signalements citoyens. Cliquez sur un objet pour ouvrir sa fiche.</p>
+
+    <h4>Territoire</h4>
+    <select id="terr" aria-label="Choisir un territoire"><option value="">Tout le Sénégal</option></select>
+    <button class="btn btn-d side-btn" id="pdf" type="button">Rapport PDF « Sécurité routière et accidentologie »</button>
+
+    <h4>Accidents corporels</h4>
+    <label class="layer sm"><input type="checkbox" data-k="acc" checked><span class="sw" style="background:#12161d"></span>Accidents géolocalisés<span class="n" id="n-acc"></span></label>
+    <div class="row" style="margin-top:6px;flex-wrap:wrap">
+      <label class="ctl" style="flex:1 1 100%">Classer les accidents par<select id="cls"><option value="type">Type de collision</option><option value="grav">Gravité</option><option value="lum">Luminosité</option><option value="milieu">Milieu</option></select></label>
+      <label class="ctl" style="flex:1 1 100%">Année<select id="yr"><option value="">2021–2025</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option></select></label>
+    </div>
+    <div class="cls-list" id="cls-list"></div>
+
+    <h4>Risques</h4>
     <div id="lay-risk"></div>
-    <div class="eyebrow" style="margin-top:18px">Services</div>
+    <h4>Services aux usagers</h4>
     <div id="lay-serv"></div>
-    <div class="eyebrow" style="margin-top:18px">Référentiels</div>
+    <h4>Participation citoyenne</h4>
+    <div id="lay-cit"></div>
+    <button class="btn side-btn" style="background:var(--rouge);color:#fff" type="button" id="sig-side">Signaler un problème sur la route</button>
+    <h4>Référentiels</h4>
     <div id="lay-ref"></div>
-    <div class="note" style="margin-top:16px">Points d'intérêt et zones accidentogènes <b>simulés</b> pour la démonstration. Raccordement prévu aux bases ANASER, DTR et forces de sécurité.</div>
+    <div class="note" style="margin-top:16px;font-size:.85rem">Accidents, équipements, fiches et signalements <b>simulés</b> pour la démonstration. Tracés autoroutiers indicatifs. Version cible : bases ANASER, DTR, BNSP et forces de sécurité.</div>
   </aside>
-  <div id="map" role="application" aria-label="Carte interactive"></div>
+  <div class="map-wrap">
+    <div id="map" role="application" aria-label="Carte interactive" style="height:100%"></div>
+    <div class="map-tools"><button class="btn-signal" id="sig-btn" type="button">⚠ Signaler</button></div>
+    <div class="map-hint" id="hint">Cliquez sur la carte à l'endroit du problème · Échap pour annuler</div>
+    <aside class="drawer" id="drawer" aria-live="polite">
+      <div class="drawer-head"><span class="cat" id="d-cat"></span><h3 id="d-title"></h3><div class="sub" id="d-sub"></div><button class="drawer-close" id="d-close" aria-label="Fermer la fiche">×</button></div>
+      <div class="drawer-body" id="d-body"></div>
+    </aside>
+  </div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="assets/js/common.js"></script>
+<script src="assets/js/maplib.js"></script>
+<script src="assets/js/report.js"></script>
 <script>
 YWW.mount('carte');
-const map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([14.4,-14.6],7);
-const light=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19});
-const dark=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19});
-const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
-const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19});
-(YWW.isDark()?dark:light).addTo(map);
-L.control.layers({'Plan clair':light,'Plan sombre':dark,'OpenStreetMap':osm,'Satellite':sat},null,{position:'topright'}).addTo(map);
-L.control.scale({imperial:false}).addTo(map);
+const fmt=YWW.fmt, fmt1=YWW.fmt1;
+window.stopPick=()=>{};window.startPick=()=>{};
+const map=L.map('map',{zoomControl:true,preferCanvas:false}).setView([14.4,-14.6],7);
+const canvas=L.canvas({padding:.3});
+YMap.basemaps(map,'osm',null,'topleft');
+L.control.scale({imperial:false,position:'bottomleft'}).addTo(map);
 
+/* ---------- styles & légendes ---------- */
 const ICON={
-  zone:['#e31b23','<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>'],
-  cct:['#2b6cb0','<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>'],
-  autoecole:['#7b3fbf','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M4.5 15.5l5.3-2.4M19.5 15.5l-5.3-2.4"/>'],
-  gare:['#00853f','<rect x="4" y="4" width="16" height="13" rx="2"/><path d="M4 11h16M8 21v-4M16 21v-4"/>'],
-  secours:['#ff6b00','<path d="M12 5v14M5 12h14"/>']
+  zone:['#e31b23','<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>','Zone accidentogène'],
+  cct:['#2b6cb0','<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>','Contrôle technique'],
+  autoecole:['#7b3fbf','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M4.5 15.5l5.3-2.4M19.5 15.5l-5.3-2.4"/>','Auto-école'],
+  gare:['#00853f','<rect x="4" y="4" width="16" height="13" rx="2"/><path d="M4 11h16M8 21v-4M16 21v-4"/>','Gare routière'],
+  secours:['#ff6b00','<path d="M12 5v14M5 12h14"/>','Centre de secours'],
+  accident:['#12161d','<circle cx="12" cy="12" r="6"/>','Accident corporel'],
+  signal:['#e31b23','<path d="M12 3 2 20h20L12 3z"/>','Signalement citoyen']
 };
-const LBL={zone:'Zones accidentogènes',cct:'Centres de contrôle technique',autoecole:'Auto-écoles',gare:'Gares routières',secours:'Centres de secours'};
+const LBL={cct:'Centres de contrôle technique',autoecole:'Auto-écoles',gare:'Gares routières',secours:'Centres de secours'};
 const pinIcon=c=>L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-26],html:`<div class="pin" style="background:${ICON[c][0]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ICON[c][1]}</svg></div>`});
-const groups={}, counts={};
+const CLS={
+  type:{'VL/VL':['#2b6cb0','VL contre VL'],'VL/PL':['#7b3fbf','VL contre poids lourd'],'VL/TC':['#00853f','VL contre transport en commun'],'VL/2RM':['#ff7a00','VL contre deux-roues motorisé'],'2RM':['#f5b700','Deux-roues motorisés'],'PIETON':['#e31b23','Piéton renversé'],'SEUL':['#12161d','Véhicule seul (sortie de route)'],'PL/TC':['#8c0e14','PL / TC entre eux'],'HIPPO':['#8b5e34','Véhicule hippomobile'],'VELO':['#14b8a6','Cycliste renversé']},
+  grav:{M:['#e31b23','Mortel'],G:['#ff7a00','Grave (hospitalisation > 24 h)'],L:['#f5b700','Léger']},
+  lum:{'Jour':['#f5b700','Jour'],'Aube / crépuscule':['#7b3fbf','Aube / crépuscule'],'Nuit, voie éclairée':['#2b6cb0','Nuit, voie éclairée'],'Nuit, voie non éclairée':['#12161d','Nuit, voie non éclairée']},
+  milieu:{U:['#2b6cb0','En agglomération'],R:['#00853f','Rase campagne']}
+};
+const CLSKEY={type:'type',grav:'grav',lum:'lum',milieu:'milieu'};
+const SIGT={eclairage:['💡','#f5b700'],degradee:['🕳','#8b5e34'],signalisation:['⚠','#ff7a00'],feu:['🚦','#e31b23'],pieton:['🚶','#2b6cb0'],obstacle:['⛔','#7b3fbf'],vitesse:['⏱','#12161d'],autre:['•','#535a66']};
+
+/* ---------- petits composants de fiche ---------- */
+const fk=(items,two)=>`<div class="fk${two?' two':''}">${items.map(i=>`<div class="${i[2]||''}"><b>${i[0]}</b><span>${i[1]}</span></div>`).join('')}</div>`;
+const hb=(rows,max,col)=>{max=max||Math.max(...rows.map(r=>r[1]),1);return `<div class="hb">${rows.map(r=>`<span>${r[0]}</span><span class="bar">${Array.isArray(r[2])?r[2].map(s=>`<i style="width:${s[0]/max*100}%;background:${s[1]}"></i>`).join(''):`<i style="width:${r[1]/max*100}%;background:${r[2]||col||'#12161d'}"></i>`}</span><span class="v">${r[3]??fmt(r[1])}</span>`).join('')}</div>`};
+const MOIS=['J','F','M','A','M','J','J','A','S','O','N','D'];
+const spark=(vals,col='#12161d',labels=MOIS)=>{const W=400,H=56,m=Math.max(...vals,1),bw=W/vals.length;return `<svg class="spark" viewBox="0 0 ${W} ${H+14}" preserveAspectRatio="none" role="img" aria-label="Série">${vals.map((v,i)=>`<rect x="${i*bw+bw*.15}" y="${H-v/m*H}" width="${bw*.7}" height="${v/m*H}" rx="2" fill="${col}" opacity="${.45+.55*v/m}"><title>${fmt(v)}</title></rect><text x="${i*bw+bw/2}" y="${H+12}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${labels[i]}</text>`).join('')}</svg>`};
+const pct=(a,b)=>b?fmt1(a/b*100)+' %':'–';
+const dfr=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+const drawer=document.getElementById('drawer');
+let flows=L.layerGroup().addTo(map);
+function openFiche(cat,title,sub,body,color){
+  document.getElementById('d-cat').textContent=cat;document.getElementById('d-cat').style.background=color;
+  document.getElementById('d-title').textContent=title;document.getElementById('d-sub').innerHTML=sub;
+  document.getElementById('d-body').innerHTML=body;document.getElementById('d-body').scrollTop=0;drawer.classList.add('open');
+}
+function closeFiche(){drawer.classList.remove('open');flows.clearLayers();stopPick()}
+document.getElementById('d-close').addEventListener('click',closeFiche);
+const lieu=p=>[p.commune,p.departement&&p.departement!==p.commune?'dép. '+p.departement:null,p.region?'région de '+p.region:null].filter(Boolean).join(' · ');
+
+/* ---------- fiches par catégorie ---------- */
+const F={
+ cct(p){
+  const COLT={'Transport en commun':'#00853f','Poids lourds':'#7b3fbf','Véhicules légers':'#2b6cb0','Deux-roues motorisés':'#f5b700'};
+  const max=Math.max(...p.types.map(t=>t[1]));
+  return `<h5>Activité ${2025}</h5>${fk([[fmt(p.controles),'contrôles effectués'],[pct(p.favorables,p.controles),'avis favorables','g'],[pct(p.defavorables,p.controles),'avis défavorables','r']])}
+  <h5>Par type de véhicule</h5>${hb(p.types.map(t=>[t[0],t[1],[[t[2],COLT[t[0]]],[t[1]-t[2],'#e31b23']],fmt(t[1])]),max)}
+  <div class="legend-dots"><span><i style="background:#2b6cb0"></i>Favorable (couleur du type)</span><span><i style="background:#e31b23"></i>Défavorable</span></div>
+  <table class="kv" style="margin-top:10px"><thead><tr><th>Type</th><th class="n">Contrôles</th><th class="n">Favorables</th><th class="n">Défav.</th></tr></thead><tbody>${p.types.map(t=>`<tr><td>${t[0]}</td><td class="n">${fmt(t[1])}</td><td class="n">${pct(t[2],t[1])}</td><td class="n">${fmt(t[1]-t[2])}</td></tr>`).join('')}</tbody></table>
+  <h5>Motifs des avis défavorables</h5>${hb(p.motifs.map(m=>[m[0],m[1],'#e31b23',m[1]+' %']),Math.max(...p.motifs.map(m=>m[1])))}
+  <h5>Contrôles par mois</h5>${spark(p.mois,'#2b6cb0')}
+  <h5>Informations pratiques</h5><table class="kv"><tr><td>Lignes de contrôle</td><td class="n">${p.lignes}</td></tr><tr><td>Contre-visites réalisées</td><td class="n">${fmt(p.contrevisites)}</td></tr><tr><td>Attente moyenne</td><td class="n">${p.attente} min</td></tr><tr><td>Horaires</td><td class="n">${p.horaires}</td></tr><tr><td>Identifiant</td><td class="n">${p.id}</td></tr></table>`},
+ autoecole(p){
+  const CC={A:'#f5b700',B:'#2b6cb0',C:'#7b3fbf',D:'#00853f',E:'#8c0e14'};const CL={A:'A – motos',B:'B – véhicules légers',C:'C – poids lourds',D:'D – transport en commun',E:'E – remorques'};
+  return `<h5>Résultats ${2025}</h5>${fk([[fmt(p.permis),'permis délivrés'],[p.reu_code+' %','réussite au code','g'],[p.reu_cond+' %','réussite à la conduite','g']])}
+  <h5>Permis délivrés par catégorie</h5>${hb(p.permis_cat.map(c=>[CL[c[0]],c[1],CC[c[0]]]))}
+  <h5>Candidats présentés</h5><table class="kv"><thead><tr><th>Épreuve</th><th class="n">Candidats</th><th class="n">Admis</th><th class="n">Taux</th></tr></thead><tbody>
+   <tr><td>Code de la route</td><td class="n">${fmt(p.cand_code)}</td><td class="n">${fmt(p.cand_code*p.reu_code/100)}</td><td class="n">${p.reu_code} %</td></tr>
+   <tr><td>Conduite</td><td class="n">${fmt(p.cand_cond)}</td><td class="n">${fmt(p.permis)}</td><td class="n">${p.reu_cond} %</td></tr></tbody></table>
+  <h5>Permis délivrés 2021 – 2025</h5>${spark(p.evo,'#7b3fbf',['2021','2022','2023','2024','2025'])}
+  <h5>Moyens et tarifs</h5><table class="kv"><tr><td>Catégories enseignées</td><td class="n">${p.categories.join(', ')}</td></tr><tr><td>Moniteurs</td><td class="n">${p.moniteurs}</td></tr><tr><td>Véhicules école</td><td class="n">${p.vehicules}</td></tr><tr><td>Forfait permis B</td><td class="n">${fmt(p.tarif_b)} FCFA</td></tr><tr><td>Forfait permis A</td><td class="n">${fmt(p.tarif_a)} FCFA</td></tr><tr><td>Agrément</td><td class="n">${p.agrement}</td></tr></table>`},
+ gare(p){
+  const mx=Math.max(...p.evenements.map(e=>e[1]));
+  return `<h5>Fréquentation</h5>${fk([[fmt(p.freq),'voyageurs / jour (moyenne)'],[fmt(p.departs),'départs / jour'],[fmt(p.capacite),'places de stationnement']])}
+  <h5>Pics lors des grands rassemblements (voyageurs / jour)</h5>${hb([['Jour ordinaire',p.freq,'#9aa1ac'],...p.evenements.map(e=>[e[0],e[1],'#00853f'])],mx)}
+  <h5>Tarifs par place (FCFA)</h5><div class="legend-dots" style="margin:0 0 6px"><span>Ligne 1 : tarif normal</span><span style="color:var(--rouge)">Ligne 2 : tarif constaté lors des grands rassemblements</span></div>
+  <table class="kv"><thead><tr><th>Destination</th><th class="n">« 7 places »</th><th class="n">Bus / minibus</th></tr></thead><tbody>
+  ${p.destinations.map(d=>`<tr><td><b>${d[0]}</b><br><small class="muted">${fmt(d[1])} km</small></td><td class="n">${fmt(d[2])}<br><b style="color:var(--rouge)">${fmt(d[3])}</b> <small style="color:var(--rouge)">+${fmt((d[3]/d[2]-1)*100)} %</small></td><td class="n">${fmt(d[4])}<br><b style="color:var(--rouge)">${fmt(d[5])}</b> <small style="color:var(--rouge)">+${fmt((d[5]/d[4]-1)*100)} %</small></td></tr>`).join('')}</tbody></table>
+  <p class="muted" style="font-size:.8rem;margin-top:8px">Tarifs relevés comparés aux tarifs homologués : l'observatoire suit les hausses lors du Magal, du Gamou, de la Tabaski et de la Korité.</p>
+  <h5>Voyageurs par mois</h5>${spark(p.mois,'#00853f')}
+  <h5>Organisation</h5><table class="kv"><tr><td>Véhicules</td><td class="n">${p.vehicules}</td></tr><tr><td>Gestion</td><td class="n">${p.regulation}</td></tr><tr><td>Identifiant</td><td class="n">${p.id}</td></tr></table>`},
+ secours(p,ll){
+  const mx=Math.max(...p.natures.map(n=>n[1]));
+  drawFlows(p,ll);
+  return `<h5>Activité opérationnelle ${2025}</h5>${fk([[fmt(p.sorties),'sorties de secours'],[fmt(p.natures[0][1]),'accidents de la circulation','r'],[p.delai+' min','délai moyen d\'arrivée (AVP)']])}
+  <h5>Sorties par nature</h5>${hb(p.natures.map((n,i)=>[n[0],n[1],['#e31b23','#ff6b00','#7b3fbf','#9aa1ac'][i],fmt(n[1])+' · '+pct(n[1],p.sorties)]),mx)}
+  <h5>Matrice des destinations (accidents)</h5>
+  <p class="muted" style="font-size:.85rem;margin-bottom:8px">Les lignes orange sur la carte relient le centre aux communes où il est intervenu sur accident (échantillon : ${fmt(p.echantillon)} interventions). L'épaisseur est proportionnelle au nombre de sorties.</p>
+  <table class="kv"><thead><tr><th>Commune desservie</th><th class="n">Interventions</th><th class="n">Tués</th></tr></thead><tbody>${p.destinations.slice(0,12).map(d=>`<tr><td>${d[2]}</td><td class="n">${fmt(d[3])}</td><td class="n">${fmt(d[4])}</td></tr>`).join('')||'<tr><td colspan="3">Aucune intervention dans l\'échantillon</td></tr>'}</tbody></table>
+  <h5>Sorties par mois</h5>${spark(p.mois,'#ff6b00')}
+  <h5>Moyens</h5><table class="kv">${p.moyens.map(m=>`<tr><td>${m[0]}</td><td class="n">${m[1]}</td></tr>`).join('')}<tr><td>Effectif</td><td class="n">${p.effectif} sapeurs-pompiers</td></tr><tr><td>Victimes prises en charge (AVP)</td><td class="n">${fmt(p.victimes)}</td></tr><tr><td>Rattachement</td><td class="n">${p.unite}</td></tr></table>`},
+ zone(p,ll){
+  const near=ACC.filter(r=>map.distance(ll,[r.lat,r.lon])<2500).length;
+  return `<h5>Bilan sur 5 ans</h5>${fk([[fmt(p.acc),'accidents'],[fmt(p.tues),'tués','r'],[fmt(p.bg),'blessés graves']])}
+  <h5>Caractéristiques</h5><table class="kv"><tr><td>Axe</td><td class="n">${p.route}</td></tr><tr><td>Point kilométrique</td><td class="n">${p.pk}</td></tr><tr><td>Longueur de la section</td><td class="n">${fmt1(p.longueur)} km</td></tr><tr><td>Niveau de gravité</td><td class="n">${['Modéré','Moyen','Élevé'][p.grav-1]}</td></tr><tr><td>Accidents de l'échantillon à moins de 2,5 km</td><td class="n">${near}</td></tr></table>
+  <h5>Types d'accidents dominants</h5>${p.types.map(t=>`<span class="pill">${t}</span>`).join('')}
+  <h5>Aménagements recommandés</h5>${p.reco.map(t=>`<span class="pill">${t}</span>`).join('')}
+  <h5>Statut</h5><span class="pill ${p.statut==='Aménagement en cours'?'l':p.statut==='À diagnostiquer'?'m':''}">${p.statut}</span>`},
+ accident(r){
+  const T=CLS.type[r.type];
+  return `<h5>Circonstances</h5><table class="kv"><tr><td>Date</td><td class="n">${dfr(r.date)}</td></tr><tr><td>Heure</td><td class="n">${r.heure.replace(':',' h ')}</td></tr><tr><td>Type de collision</td><td class="n">${T[1]}</td></tr><tr><td>Véhicules impliqués</td><td class="n">${r.nbveh}</td></tr><tr><td>Localisation</td><td class="n">${r.route==='Voirie urbaine'?'Voirie urbaine (agglomération)':r.route+' (rase campagne)'}</td></tr></table>
+  <h5>Victimes</h5>${fk([[r.tues,'tué'+(r.tues>1?'s':''),'r'],[r.bg,'blessé'+(r.bg>1?'s':'')+' grave'+(r.bg>1?'s':'')],[r.bl,'blessé'+(r.bl>1?'s':'')+' léger'+(r.bl>1?'s':'')]])}
+  <table class="kv" style="margin-top:8px"><tr><td>Total des victimes</td><td class="n">${r.tues+r.bg+r.bl}</td></tr><tr><td>Personnes indemnes</td><td class="n">${r.indemnes}</td></tr><tr><td>Gravité</td><td class="n"><span class="pill ${r.grav.toLowerCase()}">${CLS.grav[r.grav][1]}</span></td></tr></table>
+  <h5>Conditions</h5><table class="kv"><tr><td>Luminosité</td><td class="n">${r.lum}</td></tr><tr><td>Météo</td><td class="n">${r.meteo}</td></tr><tr><td>État de la chaussée</td><td class="n">${r.surface}</td></tr><tr><td>Cause présumée</td><td class="n">${r.cause}</td></tr></table>
+  <h5>Secours</h5><table class="kv"><tr><td>Centre engagé</td><td class="n">${SECNAME[r.secours]||r.secours}</td></tr><tr><td>Délai d'arrivée</td><td class="n">${r.delai} min</td></tr></table>
+  <p class="muted" style="font-size:.8rem;margin-top:12px">Dossier ${r.id} · fiche d'accident simulée (modèle du bulletin d'analyse des accidents corporels).</p>`}
+};
+
+/* ---------- matrice des sorties de secours ---------- */
+function drawFlows(p,ll){
+  flows.clearLayers();
+  const max=Math.max(...p.destinations.map(d=>d[3]),1);
+  p.destinations.forEach(d=>{
+    L.polyline([ll,[d[0],d[1]]],{color:'#ff6b00',weight:1.5+5*d[3]/max,opacity:.85,dashArray:d[3]/max<.25?'4 5':null}).addTo(flows);
+    L.circleMarker([d[0],d[1]],{radius:4+6*d[3]/max,color:'#fff',weight:1.5,fillColor:'#ff6b00',fillOpacity:.95}).bindTooltip(`${d[2]} : ${d[3]} intervention${d[3]>1?'s':''}`).addTo(flows);
+  });
+  L.circleMarker(ll,{radius:11,color:'#12161d',weight:3,fillColor:'#ff6b00',fillOpacity:1}).addTo(flows);
+  if(p.destinations.length) map.fitBounds(L.latLngBounds([ll,...p.destinations.map(d=>[d[0],d[1]])]).pad(.25),{paddingTopLeft:[0,0],paddingBottomRight:[innerWidth>860?440:0,innerWidth>860?0:innerHeight*.5]});
+}
+
+/* ---------- données ---------- */
+let ACC=[],SECNAME={},groups={},accLayer=L.layerGroup(),SIG=[],sigLayer=L.layerGroup();
+const store={get(){try{return JSON.parse(localStorage.getItem('yww-signalements')||'[]')}catch(e){return []}},set(v){try{localStorage.setItem('yww-signalements',JSON.stringify(v))}catch(e){}}};
 const params=new URLSearchParams(location.search), only=params.get('couche');
 
-Promise.all([YWW.json('data/points.geojson'),YWW.json('data/routes.geojson'),YWW.json('data/regions.geojson'),YWW.json('data/departements.geojson')]).then(([pts,routes,regs,deps])=>{
-  // référentiels
-  const regL=L.geoJSON(regs,{style:{color:'#12161d',weight:2,fill:false,opacity:.7}});
-  const depL=L.geoJSON(deps,{style:{color:'#6b7280',weight:1,dashArray:'4 3',fill:false}});
-  const rouL=L.geoJSON(routes,{style:{color:'#f5b700',weight:4,opacity:.9},onEachFeature:(f,l)=>l.bindTooltip('Route nationale '+f.properties.route.replace('N','')+' (RN'+f.properties.route.replace('N','')+')',{sticky:true})});
-  // points
-  const byCat={};
-  pts.features.forEach(f=>{(byCat[f.properties.cat]=byCat[f.properties.cat]||[]).push(f)});
-  Object.keys(byCat).forEach(c=>counts[c]=byCat[c].length);
-  const popup=p=>{
-    let h=`<b>${p.nom}</b><br><span style="color:#666">${p.ville||p.route||''}</span><br>${p.info}`;
-    if(p.cat==='zone') h+=`<br><br><b>${p.acc}</b> accidents · <b>${p.tues}</b> tués (5 ans)<br>Gravité : ${'●'.repeat(p.grav)}${'○'.repeat(3-p.grav)}`;
-    return h;
-  };
-  // zones : cercles proportionnels + heatmap
-  const zoneL=L.layerGroup(byCat.zone.map(f=>{const [lo,la]=f.geometry.coordinates;const p=f.properties;
-    return L.circleMarker([la,lo],{radius:5+p.grav*3,color:'#fff',weight:1.5,fillColor:['#f5b700','#ff7a00','#e31b23'][p.grav-1],fillOpacity:.85}).bindPopup(popup(p))}));
-  const heatL=L.heatLayer(byCat.zone.map(f=>[f.geometry.coordinates[1],f.geometry.coordinates[0],f.properties.grav/3]),{radius:28,blur:22,minOpacity:.35,gradient:{.3:'#f5b700',.6:'#ff7a00',1:'#e31b23'}});
-  groups.zone=zoneL; groups.heat=heatL;
-  ['cct','gare','secours'].forEach(c=>groups[c]=L.layerGroup(byCat[c].map(f=>L.marker([f.geometry.coordinates[1],f.geometry.coordinates[0]],{icon:pinIcon(c)}).bindPopup(popup(f.properties)))));
-  const cl=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:45});
-  byCat.autoecole.forEach(f=>cl.addLayer(L.marker([f.geometry.coordinates[1],f.geometry.coordinates[0]],{icon:pinIcon('autoecole')}).bindPopup(popup(f.properties))));
-  groups.autoecole=cl; groups.routes=rouL; groups.regions=regL; groups.deps=depL;
+Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.geojson','communes.geojson','accidents.json','labels.json','signalements.json'].map(f=>YWW.json('data/'+f))).then(([pts,routes,regs,deps,coms,acc,labels,sig])=>{
+  ACC=acc.lignes.map(r=>Object.fromEntries(acc.champs.map((k,i)=>[k,r[i]])));
+  pts.features.filter(f=>f.properties.cat==='secours').forEach(f=>SECNAME[f.properties.id]=f.properties.nom);
+  /* référentiels */
+  groups.regions=L.geoJSON(regs,{interactive:false,style:{color:'#12161d',weight:2.2,fill:false,opacity:.75}});
+  groups.deps=L.geoJSON(deps,{interactive:false,style:{color:'#535a66',weight:1.2,dashArray:'5 4',fill:false}});
+  groups.communes=L.geoJSON(coms,{interactive:false,style:{color:'#8d94a0',weight:.6,fill:false}});
+  groups.rn=L.geoJSON({type:'FeatureCollection',features:routes.features.filter(f=>f.properties.type==='RN')},{style:{color:'#e0a400',weight:4,opacity:.95},onEachFeature:(f,l)=>l.bindTooltip(f.properties.nom+' ('+f.properties.route+')',{sticky:true})});
+  groups.auto=L.geoJSON({type:'FeatureCollection',features:routes.features.filter(f=>f.properties.type==='AUTOROUTE')},{style:{color:'#7b3fbf',weight:6,opacity:.95},onEachFeature:(f,l)=>l.bindTooltip(f.properties.nom+' – '+f.properties.route+' (tracé indicatif)',{sticky:true})});
+  const lblCtl=YMap.labels(map,labels);
+  /* points */
+  const byCat={};pts.features.forEach(f=>(byCat[f.properties.cat]=byCat[f.properties.cat]||[]).push(f));
+  const fiche=(cat,p,ll)=>{const sub=lieu(p)||p.ville||'';openFiche(ICON[cat][2],p.nom,sub,F[cat](p,ll),ICON[cat][0])};
+  groups.zone=L.layerGroup(byCat.zone.map(f=>{const [lo,la]=f.geometry.coordinates,p=f.properties;
+    return L.circleMarker([la,lo],{renderer:canvas,radius:6+p.grav*3,color:'#fff',weight:2,fillColor:['#f5b700','#ff7a00','#e31b23'][p.grav-1],fillOpacity:.55}).bindTooltip(p.nom).on('click',()=>fiche('zone',p,[la,lo]))}));
+  groups.heat=L.heatLayer(byCat.zone.map(f=>[f.geometry.coordinates[1],f.geometry.coordinates[0],f.properties.grav/3]),{radius:28,blur:22,minOpacity:.35,gradient:{.3:'#f5b700',.6:'#ff7a00',1:'#e31b23'}});
+  ['cct','gare','secours'].forEach(c=>groups[c]=L.layerGroup(byCat[c].map(f=>{const ll=[f.geometry.coordinates[1],f.geometry.coordinates[0]];return L.marker(ll,{icon:pinIcon(c),title:f.properties.nom}).bindTooltip(f.properties.nom).on('click',()=>fiche(c,f.properties,ll))})));
+  groups.autoecole=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:45,iconCreateFunction:c=>L.divIcon({className:'',iconSize:[34,34],html:`<div style="width:34px;height:34px;border-radius:50%;background:#7b3fbf;color:#fff;display:grid;place-items:center;font-weight:700;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)">${c.getChildCount()}</div>`})});
+  byCat.autoecole.forEach(f=>{const ll=[f.geometry.coordinates[1],f.geometry.coordinates[0]];groups.autoecole.addLayer(L.marker(ll,{icon:pinIcon('autoecole'),title:f.properties.nom}).bindTooltip(f.properties.nom).on('click',()=>fiche('autoecole',f.properties,ll)))});
+  groups.acc=accLayer; groups.sig=sigLayer;
+  const counts=Object.fromEntries(Object.entries(byCat).map(([k,v])=>[k,v.length]));
 
-  const def={zone:true,heat:false,cct:true,autoecole:true,gare:true,secours:false,routes:true,regions:true,deps:false};
-  if(only){Object.keys(def).forEach(k=>{if(!['routes','regions'].includes(k))def[k]=false});def[only]=true;if(only==='heat')def.zone=false}
-  const row=(id,label,color,iconKey,n)=>`<label class="layer"><input type="checkbox" data-k="${id}" ${def[id]?'checked':''}><span class="sw" style="background:${color}">${iconKey?`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ICON[iconKey][1]}</svg>`:''}</span>${label}${n?`<span class="n">${n}</span>`:''}</label>`;
-  document.getElementById('lay-risk').innerHTML=row('zone','Zones accidentogènes','#e31b23','zone',counts.zone)+row('heat','Densité (carte de chaleur)','linear-gradient(135deg,#f5b700,#e31b23)',null);
-  document.getElementById('lay-serv').innerHTML=['cct','autoecole','gare','secours'].map(c=>row(c,LBL[c],ICON[c][0],c,counts[c])).join('');
-  document.getElementById('lay-ref').innerHTML=row('routes','Routes nationales','#f5b700',null)+row('regions','Limites régionales','#12161d',null)+row('deps','Limites départementales','#6b7280',null);
-  // ordre d'affichage
-  ['regions','deps','routes','heat','zone','gare','cct','secours','autoecole'].forEach(k=>{if(def[k])groups[k].addTo(map)});
-  document.querySelectorAll('.layer input').forEach(i=>i.addEventListener('change',()=>{const g=groups[i.dataset.k];i.checked?g.addTo(map):map.removeLayer(g)}));
-  // légende gravité
-  const lg=L.control({position:'bottomright'});
-  lg.onAdd=()=>{const d=L.DomUtil.create('div','legend');d.innerHTML='<b>Gravité des sections</b><br><i style="background:#e31b23;border-radius:50%"></i>Élevée<br><i style="background:#ff7a00;border-radius:50%"></i>Moyenne<br><i style="background:#f5b700;border-radius:50%"></i>Modérée';return d};
-  lg.addTo(map);
-  // aller à
-  const go=document.getElementById('go');
-  regs.features.slice().sort((a,b)=>a.properties.NAME.localeCompare(b.properties.NAME)).forEach(f=>go.insertAdjacentHTML('beforeend',`<option value="${f.properties.GID_1}">${f.properties.NAME}</option>`));
-  go.addEventListener('change',()=>{if(!go.value){map.setView([14.4,-14.6],7);return}regL.eachLayer(l=>{if(l.feature.properties.GID_1===go.value)map.fitBounds(l.getBounds(),{padding:[20,20]})})});
-  map.fitBounds(regL.getBounds(),{padding:[10,10]});
+  /* signalements */
+  SIG=[...sig.items.map(s=>({...s,demo:true})),...store.get()];
+  const SIGLAB=Object.fromEntries(sig.types);
+  const sigIcon=t=>L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],html:`<div class="sig-ic" style="background:${SIGT[t][1]}">${SIGT[t][0]}</div>`});
+  function drawSig(){sigLayer.clearLayers();SIG.forEach((s,i)=>L.marker([s.lat,s.lon],{icon:sigIcon(s.type),title:SIGLAB[s.type]}).bindTooltip(SIGLAB[s.type]).on('click',()=>showSig(i)).addTo(sigLayer));document.getElementById('n-sig').textContent=SIG.length}
+  function showSig(i){const s=SIG[i];
+    openFiche('Signalement citoyen',SIGLAB[s.type],(s.commune?s.commune+' · ':'')+'signalé le '+new Date(s.date+'T12:00:00').toLocaleDateString('fr-FR'),
+    `<h5>Suivi</h5>${fk([[s.statut,'statut du signalement'],[s.soutiens,'confirmations d\'usagers']],true)}
+     <h5>Description</h5><p>${s.description||'—'}</p>${s.photo?`<img src="${s.photo}" alt="Photo jointe" style="border-radius:10px;margin-top:6px">`:''}
+     <h5>Circuit de traitement</h5><table class="kv"><tr><td>1. Réception</td><td class="n">Observatoire</td></tr><tr><td>2. Qualification</td><td class="n">ANASER</td></tr><tr><td>3. Transmission</td><td class="n">AGEROUTE / commune</td></tr><tr><td>4. Clôture</td><td class="n">Information du citoyen</td></tr></table>
+     <button class="btn btn-j side-btn" id="confirm" type="button">Je confirme ce problème</button>`,SIGT[s.type][1]);
+    document.getElementById('confirm').addEventListener('click',e=>{s.soutiens++;if(!s.demo)store.set(SIG.filter(x=>!x.demo));e.target.textContent='Merci, confirmation enregistrée';e.target.disabled=true;showSigCount()});
+  }
+  const showSigCount=()=>{};
+
+  /* accidents : classification + filtres */
+  const st={cls:'type',yr:'',hidden:new Set()};
+  function accColor(r){return CLS[st.cls][r[CLSKEY[st.cls]]][0]}
+  function drawAcc(){
+    accLayer.clearLayers();
+    const list=ACC.filter(r=>(!st.yr||r.date.startsWith(st.yr)));
+    const shown=list.filter(r=>!st.hidden.has(r[CLSKEY[st.cls]]));
+    shown.sort((a,b)=>(a.grav==='M')-(b.grav==='M')).forEach(r=>L.circleMarker([r.lat,r.lon],{renderer:canvas,radius:r.grav==='M'?6:4.5,color:'#fff',weight:1,fillColor:accColor(r),fillOpacity:.92})
+      .bindTooltip(`${CLS.type[r.type][1]} · ${new Date(r.date+'T12:00:00').toLocaleDateString('fr-FR')}`).on('click',()=>openFiche('Accident corporel',CLS.type[r.type][1],lieu(r),F.accident(r),CLS.grav[r.grav][0])).addTo(accLayer));
+    document.getElementById('n-acc').textContent=fmt(shown.length);
+    const c={};list.forEach(r=>c[r[CLSKEY[st.cls]]]=(c[r[CLSKEY[st.cls]]]||0)+1);
+    document.getElementById('cls-list').innerHTML=Object.entries(CLS[st.cls]).map(([k,v])=>`<label><input type="checkbox" data-c="${k}" ${st.hidden.has(k)?'':'checked'}><i style="background:${v[0]}"></i>${v[1]}<em>${fmt(c[k]||0)}</em></label>`).join('');
+    document.querySelectorAll('#cls-list input').forEach(i=>i.addEventListener('change',()=>{i.checked?st.hidden.delete(i.dataset.c):st.hidden.add(i.dataset.c);drawAcc()}));
+  }
+  document.getElementById('cls').addEventListener('change',e=>{st.cls=e.target.value;st.hidden.clear();drawAcc()});
+  document.getElementById('yr').addEventListener('change',e=>{st.yr=e.target.value;drawAcc()});
+  drawAcc();
+
+  /* panneau des couches */
+  const def={acc:true,zone:false,heat:false,cct:true,autoecole:false,gare:true,secours:true,sig:true,auto:true,rn:true,regions:true,deps:false,communes:false,labels:true};
+  if(only){Object.keys(def).forEach(k=>{if(!['auto','rn','regions','labels'].includes(k))def[k]=false});def[only==='routes'?'rn':only==='accidents'?'acc':only==='signalements'?'sig':only]=true}
+  if(!def.acc) document.querySelector('[data-k="acc"]').checked=false;
+  const sw=(k,col,kind)=>kind==='ln'?`<span class="sw ln" style="background:${col}"></span>`:kind==='sq'?`<span class="sw sq" style="border:2px solid ${col}"></span>`:`<span class="sw" style="background:${col}">${ICON[k]?`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ICON[k][1]}</svg>`:''}</span>`;
+  const row=(id,label,col,kind,n,iconKey)=>`<label class="layer sm"><input type="checkbox" data-k="${id}" ${def[id]?'checked':''}>${sw(iconKey||id,col,kind)}${label}${n!=null?`<span class="n"${id==='sig'?' id="n-sig"':''}>${n}</span>`:''}</label>`;
+  document.getElementById('lay-risk').innerHTML=row('zone','Zones accidentogènes','#e31b23',null,counts.zone)+row('heat','Densité des zones (chaleur)','linear-gradient(135deg,#f5b700,#e31b23)','x');
+  document.getElementById('lay-serv').innerHTML=['cct','autoecole','gare','secours'].map(c=>row(c,LBL[c],ICON[c][0],null,counts[c])).join('');
+  document.getElementById('lay-cit').innerHTML=row('sig','Signalements citoyens','#e31b23',null,0,'signal');
+  document.getElementById('lay-ref').innerHTML=row('auto','Autoroutes','#7b3fbf','ln')+row('rn','Routes nationales','#e0a400','ln')+row('regions','Limites régionales','#12161d','sq')+row('deps','Limites départementales','#535a66','sq')+row('communes','Limites communales','#8d94a0','sq')+row('labels','Noms des territoires (selon l\'échelle)','#12161d','x');
+  drawSig();
+  const order=['communes','deps','regions','rn','auto','heat','zone','acc','sig','gare','cct','secours','autoecole'];
+  order.forEach(k=>{if(def[k])groups[k].addTo(map)});
+  lblCtl.toggle(def.labels);
+  document.querySelectorAll('.map-side .layer input[data-k]').forEach(i=>i.addEventListener('change',()=>{
+    const k=i.dataset.k; if(k==='labels') return lblCtl.toggle(i.checked);
+    i.checked?groups[k].addTo(map):map.removeLayer(groups[k]);
+    if(k==='secours'&&!i.checked) flows.clearLayers();
+  }));
+
+  /* territoire + rapport PDF */
+  const terr=document.getElementById('terr');
+  const byReg={};deps.features.forEach(f=>(byReg[f.properties.GID_1]=byReg[f.properties.GID_1]||[]).push(f));
+  regs.features.slice().sort((a,b)=>a.properties.NAME.localeCompare(b.properties.NAME)).forEach(r=>{
+    terr.insertAdjacentHTML('beforeend',`<optgroup label="Région de ${r.properties.NAME}"><option value="region|${r.properties.GID_1}">${r.properties.NAME} (région)</option>${byReg[r.properties.GID_1].map(d=>`<option value="departement|${d.properties.GID_2}">Département de ${d.properties.NAME}</option>`).join('')}</optgroup>`)});
+  const geoOf=(l,id)=>(l==='region'?regs:deps).features.find(f=>f.properties[l==='region'?'GID_1':'GID_2']===id);
+  let sel=null; const hl=L.layerGroup().addTo(map);
+  terr.addEventListener('change',()=>{hl.clearLayers();if(!terr.value){sel=null;map.fitBounds(groups.regions.getBounds());return}
+    const [l,id]=terr.value.split('|');sel=[l,id];const g=L.geoJSON(geoOf(l,id),{interactive:false,style:{color:'#f5b700',weight:4,fillColor:'#f5b700',fillOpacity:.08}}).addTo(hl);map.fitBounds(g.getBounds(),{padding:[20,20]})});
+  document.getElementById('pdf').addEventListener('click',async e=>{const b=e.currentTarget,t=b.textContent;
+    if(!sel){alert('Choisissez d\'abord une région ou un département dans la liste « Territoire ».');terr.focus();return}
+    b.textContent='Génération du rapport…';b.disabled=true;try{await YReport.build(sel[0],sel[1],2025)}finally{b.textContent=t;b.disabled=false}});
+  map.fitBounds(groups.regions.getBounds(),{padding:[10,10]});
+
+  /* signalement : mode saisie */
+  let picking=false;
+  window.startPick=()=>{closeFiche();picking=true;map.getContainer().classList.add('picking');document.getElementById('hint').classList.add('show');document.getElementById('sig-btn').classList.add('active')};
+  window.stopPick=()=>{picking=false;map.getContainer().classList.remove('picking');document.getElementById('hint').classList.remove('show');document.getElementById('sig-btn').classList.remove('active')};
+  map.on('click',e=>{if(!picking)return;stopPick();form(e.latlng)});
+  function form(ll){
+    const tmp=L.marker(ll,{icon:sigIcon('autre')}).addTo(map);
+    openFiche('Nouveau signalement','Signaler un problème',`Position : ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`,
+    `<form class="form-grid" id="sig-form">
+      <fieldset style="border:0;padding:0;margin:0"><legend style="font:700 .85rem var(--f-texte);color:var(--texte-2);margin-bottom:6px">Type de problème</legend>
+      <div class="typegrid">${sig.types.map((t,i)=>`<label><input type="radio" name="type" value="${t[0]}" ${i===0?'checked':''}>${SIGT[t[0]][0]} ${t[1]}</label>`).join('')}</div></fieldset>
+      <label>Description<textarea name="desc" placeholder="Ex. : plus d'éclairage depuis deux semaines, très dangereux pour les piétons le soir"></textarea></label>
+      <label>Photo (facultatif)<input type="file" name="photo" accept="image/*"></label>
+      <label>Contact (facultatif)<input type="text" name="contact" placeholder="Téléphone ou e-mail pour être tenu informé"></label>
+      <button class="btn btn-j" type="submit">Envoyer le signalement</button>
+      <p class="muted" style="font-size:.8rem;margin:0">Démonstration : le signalement est conservé dans ce navigateur. En production, il est transmis à l'observatoire puis au gestionnaire de la voie.</p>
+    </form>`,'#e31b23');
+    const f=document.getElementById('sig-form');let photo=null;
+    f.photo.addEventListener('change',()=>{const file=f.photo.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),k=Math.min(1,480/img.width);c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);photo=c.toDataURL('image/jpeg',.7)};img.src=rd.result};rd.readAsDataURL(file)});
+    f.addEventListener('submit',ev=>{ev.preventDefault();map.removeLayer(tmp);
+      const s={type:f.type.value,lat:+ll.lat.toFixed(5),lon:+ll.lng.toFixed(5),date:new Date().toISOString().slice(0,10),statut:'Nouveau',soutiens:0,description:f.desc.value.trim()||'Signalé par un usager',photo};
+      SIG.push(s);store.set(SIG.filter(x=>!x.demo));if(!map.hasLayer(sigLayer)){sigLayer.addTo(map);document.querySelector('[data-k="sig"]').checked=true}drawSig();
+      document.getElementById('d-body').innerHTML=`<div class="ok-box"><b>Merci, votre signalement est enregistré.</b><br>Référence : SIG-${Date.now().toString().slice(-6)}. Il apparaît désormais sur la carte avec le statut « Nouveau ».</div><button class="btn btn-d side-btn" type="button" onclick="startPick()">Faire un autre signalement</button>`});
+    drawer.querySelector('#d-close').addEventListener('click',()=>{if(map.hasLayer(tmp))map.removeLayer(tmp)},{once:true});
+  }
+  document.getElementById('sig-btn').addEventListener('click',()=>picking?stopPick():startPick());
+  document.getElementById('sig-side').addEventListener('click',startPick);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){picking?stopPick():closeFiche()}});
 });
 </script>
 </body>

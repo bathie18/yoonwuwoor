@@ -33,6 +33,8 @@
         <div class="terr-sub" id="p-sub"></div>
         <div class="minis" id="p-minis"></div>
         <div class="chart-box"><canvas id="p-chart" aria-label="Évolution annuelle"></canvas></div>
+        <button class="btn btn-d side-btn" id="pdf" type="button" hidden>Télécharger le rapport PDF « Sécurité routière et accidentologie »</button>
+        <p class="muted" id="pdf-hint" style="font-size:.85rem;margin:10px 0 0">Sélectionnez une région, un département ou une commune pour générer son rapport PDF.</p>
       </div>
     </div>
     <div class="grid g2" style="margin-top:18px">
@@ -44,7 +46,10 @@
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="assets/js/common.js"></script>
+<script src="assets/js/maplib.js"></script>
+<script src="assets/js/report.js"></script>
 <script>
 YWW.mount('outil');
 const S={scale:'region',ind:'tues',year:2025,sel:null};
@@ -54,7 +59,8 @@ const KEY={region:'GID_1',departement:'GID_2',commune:'GID_4'};
 const RAMP=['#fff4cc','#ffd966','#fdae38','#f26b2b','#d7261e','#8c0e14'];
 let ST,GEO={},layer,chart,bar,names={},parentOf={};
 const map=L.map('map',{zoomSnap:.25}).setView([14.4,-14.6],6.5);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO'}).addTo(map);
+YMap.basemaps(map,'osm');
+let LBLCTL=null;
 
 function val(level,id,y,ind){
   const d=ST[level][id]?.[y]; if(!d) return null;
@@ -74,7 +80,7 @@ function draw(){
   const lvl=S.scale,k=KEY[lvl],g=GEO[lvl];
   const vals=g.features.map(ft=>val(lvl,ft.properties[k],S.year,S.ind));
   const br=breaks(vals);
-  layer=L.geoJSON(g,{style:ft=>({fillColor:color(val(lvl,ft.properties[k],S.year,S.ind),br),fillOpacity:.85,color:'#fff',weight:lvl==='commune'?.4:1}),
+  layer=L.geoJSON(g,{style:ft=>({fillColor:color(val(lvl,ft.properties[k],S.year,S.ind),br),fillOpacity:.72,color:'#fff',weight:lvl==='commune'?.4:1}),
     onEachFeature:(ft,l)=>{const id=ft.properties[k];
       l.bindTooltip(`<b>${ft.properties.NAME}</b><br>${LBL[S.ind]} : ${f(val(lvl,id,S.year,S.ind),S.ind)}`,{sticky:true});
       l.on('click',()=>select(lvl,id));
@@ -118,6 +124,7 @@ function select(level,id){
   let sub=`Population : ${YWW.fmt(pop)} hab.`;
   if(!isNat&&level!=='region'){let p=parentOf[id];sub+=` · ${level==='commune'?'Dép. de '+names[p]+' · Région de '+names[parentOf[p]]:'Région de '+names[p]}`}
   document.getElementById('p-sub').innerHTML=sub+(isNat?'':' · <a href="#" id="back">Revenir au national</a>');
+  document.getElementById('pdf').hidden=isNat;document.getElementById('pdf-hint').hidden=!isNat;
   const y=S.year,yp=y-1;
   document.getElementById('p-minis').innerHTML=['tues','acc','bg','taux'].map(ind=>{const v=get(y,ind),p=ST.national[yp]?get(yp,ind):null;const d=p?((v-p)/p*100):null;
     return `<div class="mini"><b>${f(v,ind)}</b><span>${LBL[ind]} (${y})${d!=null?` · <span class="${d>0?'up':'down'}">${d>0?'+':''}${YWW.fmt1(d)} %</span>`:''}</span></div>`}).join('');
@@ -136,6 +143,9 @@ Promise.all(['region','departement','commune'].map(l=>YWW.json(`data/${l==='regi
   GEO.region.features.forEach(x=>names[x.properties.GID_1]=x.properties.NAME);
   GEO.departement.features.forEach(x=>{names[x.properties.GID_2]=x.properties.NAME;parentOf[x.properties.GID_2]=x.properties.GID_1});
   GEO.commune.features.forEach(x=>{names[x.properties.GID_4]=x.properties.NAME;parentOf[x.properties.GID_4]=x.properties.GID_2});
+  YWW.json('data/labels.json').then(l=>{LBLCTL=YMap.labels(map,l)});
+  YWW.json('data/routes.geojson').then(r=>{map.createPane('rt').style.zIndex=450;L.geoJSON(r,{pane:'rt',interactive:false,style:f=>({color:f.properties.type==='AUTOROUTE'?'#7b3fbf':'#12161d',weight:f.properties.type==='AUTOROUTE'?3:1.6,opacity:.55})}).addTo(map)});
+  document.getElementById('pdf').addEventListener('click',async e=>{if(!S.sel)return;const b=e.currentTarget,t=b.textContent;b.textContent='Génération du rapport…';b.disabled=true;try{await YReport.build(S.sel.level,S.sel.id,S.year)}finally{b.textContent=t;b.disabled=false}});
   const ys=document.getElementById('year');ST.meta.annees.slice().reverse().forEach(y=>ys.insertAdjacentHTML('beforeend',`<option>${y}</option>`));
   const dl=document.getElementById('terr-list');
   const idx={};
