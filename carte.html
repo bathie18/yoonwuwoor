@@ -23,11 +23,12 @@
     <button class="btn btn-d side-btn" id="pdf" type="button">Rapport PDF « Sécurité routière et accidentologie »</button>
 
     <h4>Accidents corporels</h4>
-    <label class="layer sm"><input type="checkbox" data-k="acc" checked><span class="sw" style="background:#12161d"></span>Accidents géolocalisés<span class="n" id="n-acc"></span></label>
+    <label class="layer sm"><input type="checkbox" data-k="acc"><span class="sw" style="background:#12161d"></span>Accidents géolocalisés<span class="n" id="n-acc"></span></label>
     <div class="row" style="margin-top:6px;flex-wrap:wrap">
       <label class="ctl" style="flex:1 1 100%">Classer les accidents par<select id="cls"><option value="type">Type de collision</option><option value="grav">Gravité</option><option value="lum">Luminosité</option><option value="milieu">Milieu</option></select></label>
       <label class="ctl" style="flex:1 1 100%">Année<select id="yr"><option value="">2021–2025</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option></select></label>
     </div>
+    <div class="cls-tools"><span>Catégories affichées</span><button type="button" data-all="acc">Tout</button><button type="button" data-none="acc">Aucun</button></div>
     <div class="cls-list" id="cls-list"></div>
 
     <h4>Risques</h4>
@@ -36,6 +37,12 @@
     <div id="lay-serv"></div>
     <h4>Participation citoyenne</h4>
     <div id="lay-cit"></div>
+    <div class="row" style="margin-top:6px;flex-wrap:wrap">
+      <label class="ctl" style="flex:1 1 100%">Classer les signalements par<select id="scls"><option value="type">Type de problème</option><option value="fam">Famille</option><option value="statut">Statut de traitement</option><option value="gest">Gestionnaire compétent</option><option value="prio">Priorité</option></select></label>
+    </div>
+    <div class="cls-tools"><span>Catégories affichées</span><button type="button" data-all="sig">Tout</button><button type="button" data-none="sig">Aucun</button></div>
+    <div class="cls-list" id="scls-list"></div>
+    <a class="side-link" href="demarches.html#circuit">Comment un signalement est-il traité ?</a>
     <button class="btn side-btn" style="background:var(--rouge);color:#fff" type="button" id="sig-side">Signaler un problème sur la route</button>
     <h4>Référentiels</h4>
     <div id="lay-ref"></div>
@@ -58,6 +65,7 @@
 <script src="assets/js/common.js"></script>
 <script src="assets/js/maplib.js"></script>
 <script src="assets/js/report.js"></script>
+<script src="assets/js/circuit.js"></script>
 <script>
 YWW.mount('carte');
 const fmt=YWW.fmt, fmt1=YWW.fmt1;
@@ -86,7 +94,6 @@ const CLS={
   milieu:{U:['#2b6cb0','En agglomération'],R:['#00853f','Rase campagne']}
 };
 const CLSKEY={type:'type',grav:'grav',lum:'lum',milieu:'milieu'};
-const SIGT={eclairage:['💡','#f5b700'],degradee:['🕳','#8b5e34'],signalisation:['⚠','#ff7a00'],feu:['🚦','#e31b23'],pieton:['🚶','#2b6cb0'],obstacle:['⛔','#7b3fbf'],vitesse:['⏱','#12161d'],autre:['•','#535a66']};
 
 /* ---------- petits composants de fiche ---------- */
 const fk=(items,two)=>`<div class="fk${two?' two':''}">${items.map(i=>`<div class="${i[2]||''}"><b>${i[0]}</b><span>${i[1]}</span></div>`).join('')}</div>`;
@@ -204,23 +211,64 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
   groups.acc=accLayer; groups.sig=sigLayer;
   const counts=Object.fromEntries(Object.entries(byCat).map(([k,v])=>[k,v.length]));
 
-  /* signalements */
-  SIG=[...sig.items.map(s=>({...s,demo:true})),...store.get()];
-  const SIGLAB=Object.fromEntries(sig.types);
-  const sigIcon=t=>L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],html:`<div class="sig-ic" style="background:${SIGT[t][1]}">${SIGT[t][0]}</div>`});
-  function drawSig(){sigLayer.clearLayers();SIG.forEach((s,i)=>L.marker([s.lat,s.lon],{icon:sigIcon(s.type),title:SIGLAB[s.type]}).bindTooltip(SIGLAB[s.type]).on('click',()=>showSig(i)).addTo(sigLayer));document.getElementById('n-sig').textContent=SIG.length}
-  function showSig(i){const s=SIG[i];
-    openFiche('Signalement citoyen',SIGLAB[s.type],(s.commune?s.commune+' · ':'')+'signalé le '+new Date(s.date+'T12:00:00').toLocaleDateString('fr-FR'),
-    `<h5>Suivi</h5>${fk([[s.statut,'statut du signalement'],[s.soutiens,'confirmations d\'usagers']],true)}
-     <h5>Description</h5><p>${s.description||'—'}</p>${s.photo?`<img src="${s.photo}" alt="Photo jointe" style="border-radius:10px;margin-top:6px">`:''}
-     <h5>Circuit de traitement</h5><table class="kv"><tr><td>1. Réception</td><td class="n">Observatoire</td></tr><tr><td>2. Qualification</td><td class="n">ANASER</td></tr><tr><td>3. Transmission</td><td class="n">AGEROUTE / commune</td></tr><tr><td>4. Clôture</td><td class="n">Information du citoyen</td></tr></table>
-     <button class="btn btn-j side-btn" id="confirm" type="button">Je confirme ce problème</button>`,SIGT[s.type][1]);
-    document.getElementById('confirm').addEventListener('click',e=>{s.soutiens++;if(!s.demo)store.set(SIG.filter(x=>!x.demo));e.target.textContent='Merci, confirmation enregistrée';e.target.disabled=true;showSigCount()});
+  /* signalements : classification + circuit de traitement */
+  const C=YCircuit;
+  SIG=[...sig.items.map(x=>({...x,demo:true})),...store.get()];
+  const SCLS={
+    type:{key:x=>x.type,cats:Object.fromEntries(Object.entries(C.TYPES).map(([k,v])=>[k,[v.col,v.ic+' '+v.lib]]))},
+    fam:{key:x=>C.TYPES[x.type].fam,cats:Object.fromEntries(Object.entries(C.FAMILLES).map(([k,v])=>[k,[v[1],v[0]]]))},
+    statut:{key:x=>x.statut,cats:Object.fromEntries(Object.entries(C.STATUTS).map(([k,v])=>[k,[v.col,k+(v.ouvert?'':' (clos)')]]))},
+    gest:{key:x=>x.gestionnaire,cats:Object.fromEntries(Object.entries(C.GESTIONNAIRES).map(([k,v])=>[k,[v[0],k]]))},
+    prio:{key:x=>x.priorite,cats:Object.fromEntries(Object.entries(C.PRIORITES).map(([k,v])=>[k,[v[1],v[0]]]))}
+  };
+  const sst={cls:'type',hidden:new Set()};
+  const sigIcon=(t,col)=>L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],html:`<div class="sig-ic" style="background:${col||C.TYPES[t].col}">${C.TYPES[t].ic}</div>`});
+  function drawSig(){
+    sigLayer.clearLayers();const cf=SCLS[sst.cls];
+    const shown=SIG.filter(x=>!sst.hidden.has(cf.key(x)));
+    shown.forEach(x=>L.marker([x.lat,x.lon],{icon:sigIcon(x.type,cf.cats[cf.key(x)]?.[0]),title:C.TYPES[x.type].lib}).bindTooltip(`${C.TYPES[x.type].lib} · ${x.statut}`).on('click',()=>showSig(x)).addTo(sigLayer));
+    document.getElementById('n-sig').textContent=fmt(shown.length);
+    const c={};SIG.forEach(x=>{const k=cf.key(x);c[k]=(c[k]||0)+1});
+    document.getElementById('scls-list').innerHTML=Object.entries(cf.cats).map(([k,v])=>`<label><input type="checkbox" data-c="${k}" ${sst.hidden.has(k)?'':'checked'}><i style="background:${v[0]}"></i>${v[1]}<em>${fmt(c[k]||0)}</em></label>`).join('');
+    document.querySelectorAll('#scls-list input').forEach(i=>i.addEventListener('change',()=>{i.checked?sst.hidden.delete(i.dataset.c):sst.hidden.add(i.dataset.c);if(i.checked)showLayer('sig');drawSig()}));
   }
-  const showSigCount=()=>{};
-
+  document.getElementById('scls').addEventListener('change',e=>{sst.cls=e.target.value;sst.hidden.clear();drawSig()});
+  const dc=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR');
+  const gName=x=>x.gestionnaire==='Commune'&&x.commune?'Commune de '+x.commune:(x.gestionnaire||'À déterminer');
+  function showSig(x){
+    const S=C.STATUTS[x.statut]||C.STATUTS['Reçu'],cur=S.etape,clos=!S.ouvert,rej=x.statut==='Rejeté';
+    const H=Object.fromEntries((x.historique||[]).map(h=>[h[1],h]));
+    const steps=C.ETAPES.map((e,i)=>{const h=H[i];const done=!!h,now=!clos&&i===cur;
+      const qui=i>=3&&i<=4?gName(x):e.qui;
+      return `<li class="${done?'done':''} ${now?'now':''} ${rej&&i===1?'rej':''}"><b>${i+1}. ${e.nom}</b><span class="who">${qui}</span>${h?`<span class="when">${dc(h[0])} · ${h[3]}</span>`:`<span class="when muted">Délai cible : ${e.delai}</span>`}</li>`}).join('');
+    const resp=clos?(rej?'Dossier rejeté par l\'ANASER':'Dossier clôturé'):(cur>=3&&cur<=4?gName(x):cur===2?gName(x)+' (à accepter)':'ANASER – cellule Observatoire');
+    const P=C.PRIORITES[x.priorite];
+    openFiche('Signalement citoyen',C.TYPES[x.type].lib,`${x.id||'Nouveau'} · ${x.commune||''}${x.commune?' · ':''}signalé le ${dc(x.date)}`,
+    `<h5>Situation</h5>${fk([[x.statut,'statut actuel'],[x.priorite||'–','priorité'],[x.soutiens,'confirmations']])}
+     <table class="kv" style="margin-top:8px"><tr><td>Responsable actuel</td><td class="n"><b>${resp}</b></td></tr><tr><td>Gestionnaire compétent</td><td class="n">${gName(x)}</td></tr><tr><td>Voie</td><td class="n">${x.voie||'—'}</td></tr><tr><td>Famille</td><td class="n">${C.FAMILLES[C.TYPES[x.type].fam][0]}</td></tr><tr><td>Priorité</td><td class="n"><span class="pill" style="background:${P?P[1]:'#ccc'};color:#fff;border-color:transparent">${P?P[0]:'À qualifier'}</span></td></tr></table>
+     <h5>Description</h5><p>${x.description||'—'}</p>${x.photo?`<img src="${x.photo}" alt="Photo jointe" style="border-radius:10px;margin-top:6px">`:''}
+     <h5>Circuit de traitement</h5><ol class="steps">${steps}</ol>
+     <a class="side-link" href="demarches.html#circuit">Voir qui fait quoi à chaque étape</a>
+     ${clos?'':'<button class="btn btn-j side-btn" id="confirm" type="button">Je confirme ce problème</button>'}`,C.TYPES[x.type].col);
+    const b=document.getElementById('confirm');if(b)b.addEventListener('click',e=>{x.soutiens++;if(!x.demo)store.set(SIG.filter(y=>!y.demo));e.target.textContent='Merci, confirmation enregistrée';e.target.disabled=true});
+  }
+  /* gestionnaire proposé automatiquement : type + voie la plus proche */
+  const ROADS=routes.features;
+  function nearRoad(ll){let best=null;ROADS.forEach(f=>{const ls=f.geometry.type==='LineString'?[f.geometry.coordinates]:f.geometry.coordinates;ls.forEach(l=>{for(let i=1;i<l.length;i++){const d=L.LineUtil.pointToSegmentDistance(map.latLngToLayerPoint(ll),map.latLngToLayerPoint([l[i-1][1],l[i-1][0]]),map.latLngToLayerPoint([l[i][1],l[i][0]]));const m=d*(40075016*Math.cos(ll.lat*Math.PI/180)/Math.pow(2,map.getZoom()+8));if(m<350&&(!best||m<best[0]))best=[m,f.properties]}})});return best?best[1]:null}
+  function inPoly(pt,geom){const P=geom.type==='Polygon'?[geom.coordinates]:geom.coordinates;return P.some(poly=>{let ins=false;const r=poly[0];for(let i=0,j=r.length-1;i<r.length;j=i++){const [xi,yi]=r[i],[xj,yj]=r[j];if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))ins=!ins}return ins})}
+  function communeOf(ll){const f=coms.features.find(f=>inPoly([ll.lng,ll.lat],f.geometry));return f?f.properties.NAME:null}
+  function gestionnaire(t,rd,urb){
+    if(t==='vitesse')return urb?'Police nationale':'Gendarmerie nationale';
+    if(t==='autre')return 'ANASER';
+    if(rd&&rd.type==='AUTOROUTE')return 'ADS (Autoroutes du Sénégal)';
+    if(t==='eclairage')return 'Commune';
+    if(t==='obstacle'&&!rd)return urb?'Police nationale':'Gendarmerie nationale';
+    if(rd&&rd.type==='RN')return 'AGEROUTE';
+    return 'Commune';
+  }
   /* accidents : classification + filtres */
-  const st={cls:'type',yr:'',hidden:new Set()};
+  const st={cls:'type',yr:'',hidden:new Set(Object.keys(CLS.type))};
+  if(only==='accidents') st.hidden.clear();
   function accColor(r){return CLS[st.cls][r[CLSKEY[st.cls]]][0]}
   function drawAcc(){
     accLayer.clearLayers();
@@ -231,16 +279,23 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
     document.getElementById('n-acc').textContent=fmt(shown.length);
     const c={};list.forEach(r=>c[r[CLSKEY[st.cls]]]=(c[r[CLSKEY[st.cls]]]||0)+1);
     document.getElementById('cls-list').innerHTML=Object.entries(CLS[st.cls]).map(([k,v])=>`<label><input type="checkbox" data-c="${k}" ${st.hidden.has(k)?'':'checked'}><i style="background:${v[0]}"></i>${v[1]}<em>${fmt(c[k]||0)}</em></label>`).join('');
-    document.querySelectorAll('#cls-list input').forEach(i=>i.addEventListener('change',()=>{i.checked?st.hidden.delete(i.dataset.c):st.hidden.add(i.dataset.c);drawAcc()}));
+    document.querySelectorAll('#cls-list input').forEach(i=>i.addEventListener('change',()=>{i.checked?st.hidden.delete(i.dataset.c):st.hidden.add(i.dataset.c);if(i.checked)showLayer('acc');drawAcc()}));
   }
-  document.getElementById('cls').addEventListener('change',e=>{st.cls=e.target.value;st.hidden.clear();drawAcc()});
+  document.getElementById('cls').addEventListener('change',e=>{st.cls=e.target.value;st.hidden=new Set(map.hasLayer(accLayer)?[]:Object.keys(CLS[st.cls]));drawAcc()});
   document.getElementById('yr').addEventListener('change',e=>{st.yr=e.target.value;drawAcc()});
   drawAcc();
+  /* Tout / Aucun */
+  document.querySelectorAll('[data-all],[data-none]').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.all||b.dataset.none,all=!!b.dataset.all;
+    if(k==='acc'){st.hidden=new Set(all?[]:Object.keys(CLS[st.cls]));if(all)showLayer('acc');drawAcc()}
+    else{sst.hidden=new Set(all?[]:Object.keys(SCLS[sst.cls].cats));if(all)showLayer('sig');drawSig()}
+  }));
+  function showLayer(k){if(!map.hasLayer(groups[k])){groups[k].addTo(map);const i=document.querySelector(`[data-k="${k}"]`);if(i)i.checked=true}}
 
   /* panneau des couches */
-  const def={acc:true,zone:false,heat:false,cct:true,autoecole:false,gare:true,secours:true,sig:true,auto:true,rn:true,regions:true,deps:false,communes:false,labels:true};
+  const def={acc:false,zone:false,heat:false,cct:true,autoecole:false,gare:true,secours:true,sig:true,auto:true,rn:true,regions:true,deps:false,communes:false,labels:true};
   if(only){Object.keys(def).forEach(k=>{if(!['auto','rn','regions','labels'].includes(k))def[k]=false});def[only==='routes'?'rn':only==='accidents'?'acc':only==='signalements'?'sig':only]=true}
-  if(!def.acc) document.querySelector('[data-k="acc"]').checked=false;
+  document.querySelector('[data-k="acc"]').checked=def.acc;
   const sw=(k,col,kind)=>kind==='ln'?`<span class="sw ln" style="background:${col}"></span>`:kind==='sq'?`<span class="sw sq" style="border:2px solid ${col}"></span>`:`<span class="sw" style="background:${col}">${ICON[k]?`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ICON[k][1]}</svg>`:''}</span>`;
   const row=(id,label,col,kind,n,iconKey)=>`<label class="layer sm"><input type="checkbox" data-k="${id}" ${def[id]?'checked':''}>${sw(iconKey||id,col,kind)}${label}${n!=null?`<span class="n"${id==='sig'?' id="n-sig"':''}>${n}</span>`:''}</label>`;
   document.getElementById('lay-risk').innerHTML=row('zone','Zones accidentogènes','#e31b23',null,counts.zone)+row('heat','Densité des zones (chaleur)','linear-gradient(135deg,#f5b700,#e31b23)','x');
@@ -253,6 +308,8 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
   lblCtl.toggle(def.labels);
   document.querySelectorAll('.map-side .layer input[data-k]').forEach(i=>i.addEventListener('change',()=>{
     const k=i.dataset.k; if(k==='labels') return lblCtl.toggle(i.checked);
+    if(k==='acc'&&i.checked&&st.hidden.size===Object.keys(CLS[st.cls]).length){st.hidden.clear();drawAcc()}
+    if(k==='sig'&&i.checked&&sst.hidden.size===Object.keys(SCLS[sst.cls].cats).length){sst.hidden.clear();drawSig()}
     i.checked?groups[k].addTo(map):map.removeLayer(groups[k]);
     if(k==='secours'&&!i.checked) flows.clearLayers();
   }));
@@ -278,10 +335,12 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
   map.on('click',e=>{if(!picking)return;stopPick();form(e.latlng)});
   function form(ll){
     const tmp=L.marker(ll,{icon:sigIcon('autre')}).addTo(map);
+    const rd=nearRoad(ll),cm=communeOf(ll);
     openFiche('Nouveau signalement','Signaler un problème',`Position : ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`,
     `<form class="form-grid" id="sig-form">
       <fieldset style="border:0;padding:0;margin:0"><legend style="font:700 .85rem var(--f-texte);color:var(--texte-2);margin-bottom:6px">Type de problème</legend>
-      <div class="typegrid">${sig.types.map((t,i)=>`<label><input type="radio" name="type" value="${t[0]}" ${i===0?'checked':''}>${SIGT[t[0]][0]} ${t[1]}</label>`).join('')}</div></fieldset>
+      <div class="typegrid">${Object.entries(C.TYPES).map(([k,t],i)=>`<label><input type="radio" name="type" value="${k}" ${i===0?'checked':''}>${t.ic} ${t.lib}</label>`).join('')}</div></fieldset>
+      <div class="note" id="route-info" style="font-size:.85rem"></div>
       <label>Description<textarea name="desc" placeholder="Ex. : plus d'éclairage depuis deux semaines, très dangereux pour les piétons le soir"></textarea></label>
       <label>Photo (facultatif)<input type="file" name="photo" accept="image/*"></label>
       <label>Contact (facultatif)<input type="text" name="contact" placeholder="Téléphone ou e-mail pour être tenu informé"></label>
@@ -289,11 +348,15 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
       <p class="muted" style="font-size:.8rem;margin:0">Démonstration : le signalement est conservé dans ce navigateur. En production, il est transmis à l'observatoire puis au gestionnaire de la voie.</p>
     </form>`,'#e31b23');
     const f=document.getElementById('sig-form');let photo=null;
+    const urb=!rd||!!cm&&ACC.some(r=>r.milieu==='U'&&map.distance(ll,[r.lat,r.lon])<3000);
+    const info=()=>{const t=f.type.value,g=gestionnaire(t,rd,urb);document.getElementById('route-info').innerHTML=`<b>Voie :</b> ${rd?rd.route+' – '+rd.nom:'voirie communale'}${cm?' · commune de '+cm:''}<br><b>Gestionnaire proposé :</b> ${g==='Commune'&&cm?'Commune de '+cm:g}<br><b>Priorité indicative :</b> ${C.PRIORITES[C.TYPES[t].prio][0]}`};
+    f.querySelectorAll('[name=type]').forEach(r=>r.addEventListener('change',info));info();
     f.photo.addEventListener('change',()=>{const file=f.photo.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),k=Math.min(1,480/img.width);c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);photo=c.toDataURL('image/jpeg',.7)};img.src=rd.result};rd.readAsDataURL(file)});
     f.addEventListener('submit',ev=>{ev.preventDefault();map.removeLayer(tmp);
-      const s={type:f.type.value,lat:+ll.lat.toFixed(5),lon:+ll.lng.toFixed(5),date:new Date().toISOString().slice(0,10),statut:'Nouveau',soutiens:0,description:f.desc.value.trim()||'Signalé par un usager',photo};
-      SIG.push(s);store.set(SIG.filter(x=>!x.demo));if(!map.hasLayer(sigLayer)){sigLayer.addTo(map);document.querySelector('[data-k="sig"]').checked=true}drawSig();
-      document.getElementById('d-body').innerHTML=`<div class="ok-box"><b>Merci, votre signalement est enregistré.</b><br>Référence : SIG-${Date.now().toString().slice(-6)}. Il apparaît désormais sur la carte avec le statut « Nouveau ».</div><button class="btn btn-d side-btn" type="button" onclick="startPick()">Faire un autre signalement</button>`});
+      const t=f.type.value,today=new Date().toISOString().slice(0,10),ref='SIG-'+today.slice(0,4)+'-L'+Date.now().toString().slice(-5);
+      const s={id:ref,type:t,lat:+ll.lat.toFixed(5),lon:+ll.lng.toFixed(5),date:today,statut:'Reçu',priorite:C.TYPES[t].prio,gestionnaire:gestionnaire(t,rd,urb),voie:rd?rd.route+' – '+rd.nom:'Voirie communale',commune:cm,soutiens:0,description:f.desc.value.trim()||'Signalé par un usager',photo,historique:[[today,0,'Plateforme (automatique)','Signalement enregistré, accusé de réception envoyé']]};
+      SIG.push(s);store.set(SIG.filter(x=>!x.demo));sst.hidden.clear();showLayer('sig');drawSig();
+      document.getElementById('d-body').innerHTML=`<div class="ok-box"><b>Merci, votre signalement est enregistré.</b><br>Référence : ${s.id}. Statut : « Reçu ». Prochaine étape : qualification par l'ANASER, puis transmission à : <b>${gName(s)}</b>.</div><button class="btn btn-j side-btn" type="button" id="see-new">Suivre ce signalement</button><button class="btn btn-d side-btn" type="button" onclick="startPick()">Faire un autre signalement</button>`;document.getElementById('see-new').addEventListener('click',()=>showSig(s))});
     drawer.querySelector('#d-close').addEventListener('click',()=>{if(map.hasLayer(tmp))map.removeLayer(tmp)},{once:true});
   }
   document.getElementById('sig-btn').addEventListener('click',()=>picking?stopPick():startPick());

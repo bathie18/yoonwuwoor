@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prévention et démarches — Yoon Wu Wóor</title>
+<meta name="description" content="Bons gestes de sécurité routière, démarches administratives (permis, carte grise, visite technique, assurance), infractions et sanctions, circuit de traitement des signalements et contacts utiles.">
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.subnav{position:sticky;top:76px;z-index:900;background:var(--surface);border-bottom:1px solid var(--bord)}
+.subnav .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.subnav a{flex:0 0 auto;font:700 .92rem var(--f-texte);text-decoration:none;padding:14px 12px;color:var(--texte-2);border-bottom:3px solid transparent}
+.subnav a:hover,.subnav a.on{color:var(--texte);border-color:var(--jaune)}
+section[id]{scroll-margin-top:140px}
+.geste{display:flex;flex-direction:column;gap:10px}
+.geste .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:1.5rem;background:var(--surface-2)}
+.geste ul{margin:0;padding-left:18px;color:var(--texte-2);font-size:.95rem}
+.geste ul li{margin-bottom:4px}
+.geste .why{font-size:.85rem;border-top:1px dashed var(--bord);padding-top:10px;color:var(--texte)}
+.geste .pubs{display:flex;gap:6px;flex-wrap:wrap}
+.geste .pubs span{font:700 .72rem var(--f-texte);background:var(--surface-2);border:1px solid var(--bord);border-radius:99px;padding:2px 8px;color:var(--texte-2)}
+.check{display:grid;gap:8px}
+.check label{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--bord);border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:600}
+.check input{width:20px;height:20px;accent-color:var(--vert);margin-top:2px;flex:0 0 20px}
+.check label:has(input:checked){border-color:var(--vert);background:color-mix(in srgb,var(--vert) 8%,var(--surface))}
+.check small{display:block;font-weight:400;color:var(--texte-2)}
+.prog{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:6px 0 14px}
+.prog i{display:block;height:100%;background:var(--vert);transition:width .25s}
+details.dem{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);margin-bottom:12px;box-shadow:var(--ombre)}
+details.dem summary{list-style:none;cursor:pointer;padding:18px 22px;display:flex;gap:14px;align-items:center}
+details.dem summary::-webkit-details-marker{display:none}
+details.dem summary .ic{flex:0 0 44px;height:44px;border-radius:12px;background:var(--asphalte);color:var(--jaune);display:grid;place-items:center;font-size:1.3rem}
+details.dem summary h3{margin:0;font-size:1.3rem}
+details.dem summary p{margin:2px 0 0;color:var(--texte-2);font-size:.92rem}
+details.dem summary::after{content:"+";margin-left:auto;font:700 1.6rem var(--f-titre);color:var(--texte-2)}
+details.dem[open] summary::after{content:"–"}
+.dem-body{padding:0 22px 22px;display:grid;grid-template-columns:1.3fr 1fr;gap:22px}
+.dem-body h4{font:700 .78rem var(--f-texte);letter-spacing:.1em;text-transform:uppercase;color:var(--vert);margin:0 0 8px}
+.dem-body ol,.dem-body ul{margin:0 0 14px;padding-left:20px}
+.dem-body li{margin-bottom:5px}
+.where{background:var(--surface-2);border-radius:12px;padding:14px 16px;font-size:.93rem}
+.where p{margin:0 0 6px}
+@media (max-width:820px){.dem-body{grid-template-columns:1fr}}
+.warn{background:color-mix(in srgb,var(--rouge) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--rouge) 45%,var(--bord));border-radius:12px;padding:16px 18px}
+.warn b{color:var(--rouge)}
+table.inf{width:100%;border-collapse:collapse;font-size:.94rem;background:var(--surface);border-radius:var(--r);overflow:hidden}
+table.inf th,table.inf td{padding:11px 12px;border-bottom:1px solid var(--bord);text-align:left;vertical-align:top}
+table.inf th{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--texte-2);background:var(--surface-2)}
+table.inf td.tbd{color:var(--texte-2);font-style:italic;white-space:nowrap}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--bord);border-radius:var(--r)}
+.reform{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.reform div{background:var(--surface);border:1px solid var(--bord);border-radius:12px;padding:14px}
+.reform b{display:block;font-family:var(--f-titre);font-size:1.25rem;margin-bottom:4px}
+.reform span{font-size:.88rem;color:var(--texte-2)}
+@media (max-width:820px){.reform{grid-template-columns:1fr}}
+/* circuit */
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;counter-reset:st}
+.flow .st{background:var(--surface);border:1px solid var(--bord);border-radius:14px;padding:16px 14px;position:relative;display:flex;flex-direction:column;gap:8px}
+.flow .st::before{counter-increment:st;content:counter(st);position:absolute;top:-14px;left:14px;width:28px;height:28px;border-radius:50%;background:var(--asphalte);color:var(--jaune);display:grid;place-items:center;font:700 1rem var(--f-titre)}
+.flow .st h4{margin:8px 0 0;font-size:1.12rem}
+.flow .who{font:700 .78rem var(--f-texte);padding:3px 9px;border-radius:99px;color:#fff;align-self:flex-start}
+.flow .st p{margin:0;font-size:.86rem;color:var(--texte-2)}
+.flow .dl{margin-top:auto;font-size:.78rem;font-weight:700;color:var(--texte);border-top:1px dashed var(--bord);padding-top:8px}
+@media (max-width:1080px){.flow{grid-template-columns:repeat(3,1fr);row-gap:24px}}
+@media (max-width:620px){.flow{grid-template-columns:1fr}}
+.raci th:first-child,.raci td:first-child{font-weight:700}
+.legend-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.legend-row span{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;background:var(--surface);border:1px solid var(--bord);border-radius:99px;padding:4px 10px}
+.legend-row i{width:10px;height:10px;border-radius:50%}
+.urg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.urg a{display:flex;align-items:center;gap:16px;text-decoration:none;background:var(--asphalte);color:#fff;border-radius:var(--r);padding:18px 20px}
+.urg b{font:700 2.6rem var(--f-titre);color:var(--jaune);line-height:1}
+.urg span{font-weight:700}.urg small{display:block;color:#b9bec7;font-weight:400}
+@media (max-width:820px){.urg{grid-template-columns:1fr}}
+.contacts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.contacts .card h3{font-size:1.15rem;margin-bottom:4px}
+.contacts .card p{font-size:.9rem}
+.contacts .card .for{margin-top:8px;font-size:.85rem;color:var(--texte)}
+</style>
+</head>
+<body>
+<header class="page-head"><div class="wrap">
+  <div class="crumbs"><a href="index.html">Accueil</a> › Prévention et démarches</div>
+  <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Prévention et démarches</h1>
+  <p>Les bons gestes pour rouler en sécurité, les démarches administratives pas à pas, ce que prévoit la réglementation et à qui s'adresser.</p>
+</div></header>
+<nav class="subnav" aria-label="Sections de la page"><div class="wrap">
+  <a href="#prevention">Bons gestes</a><a href="#trajet">Avant un long trajet</a><a href="#demarches">Démarches</a><a href="#sanctions">Infractions et sanctions</a><a href="#circuit">Traitement des signalements</a><a href="#contacts">Contacts utiles</a>
+</div></nav>
+<main>
+  <!-- ============ BONS GESTES ============ -->
+  <section class="sec" id="prevention">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Sensibilisation</div><h2 class="mb0">Les bons gestes</h2></div><p>Le non-respect des règles explique 30 % des accidents et environ 40 % des décès en 2025. Les gestes ci-dessous visent directement les principales causes relevées par l'ANASER.</p></div>
+      <div class="filters" id="pub"></div>
+      <div class="grid g3" id="gestes"></div>
+    </div>
+  </section>
+
+  <!-- ============ AVANT UN LONG TRAJET ============ -->
+  <section class="sec sec-alt" id="trajet">
+    <div class="wrap grid g2" style="gap:36px;align-items:start">
+      <div>
+        <div class="eyebrow">Check-list</div>
+        <h2>Avant un long trajet</h2>
+        <p class="muted">Magal, Gamou, Tabaski, retours de vacances : les grands départs concentrent les accidents graves sur les corridors. Cochez chaque point avant de partir ; votre progression reste enregistrée sur cet appareil.</p>
+        <div class="note">Décembre, août et octobre sont les mois les plus accidentogènes de 2025, et 37 % des accidents des grands axes ont lieu entre 18 h et minuit.</div>
+        <div class="btns"><button class="btn btn-d" id="reset" type="button">Réinitialiser la liste</button><a class="btn" style="border-color:var(--bord)" href="carte.html?couche=zone">Voir les zones accidentogènes</a></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-weight:700"><span>Votre préparation</span><span id="pct">0 %</span></div>
+        <div class="prog"><i id="bar" style="width:0"></i></div>
+        <div class="check" id="check"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DÉMARCHES ============ -->
+  <section class="sec" id="demarches">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Démarches</div><h2 class="mb0">Vos démarches pas à pas</h2></div><p>Procédures, pièces à fournir et services à contacter. Les pièces sont indicatives : vérifiez toujours la liste à jour auprès du service concerné avant de vous déplacer.</p></div>
+      <div id="dem"></div>
+    </div>
+  </section>
+
+  <!-- ============ INFRACTIONS ============ -->
+  <section class="sec sec-alt" id="sanctions">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Réglementation</div><h2 class="mb0">Infractions et sanctions</h2></div><p>Le cadre en vigueur repose sur le Code de la route de 2002 (loi n° 2002-30 et décret n° 2004-13). Un nouveau Code de la route, voté en 2022, est en cours de mise en application.</p></div>
+      <div class="warn" style="margin-bottom:20px"><b>Attention aux faux barèmes.</b> Une grille d'amendes souvent partagée sur les réseaux sociaux et reprise par certains sites (référence « arrêté n° 009/MEMEFPD/MIT/MSPC ») est un texte <b>togolais</b>, et non sénégalais (vérification d'Africa Check, mai 2025). L'observatoire publiera ici uniquement le barème officiel transmis par le ministère.</div>
+      <h3>Ce qui change avec le nouveau Code de la route</h3>
+      <div class="reform" style="margin-bottom:26px">
+        <div><b>Permis à points</b><span>Chaque infraction retire des points ; le barème sera précisé par les textes d'application.</span></div>
+        <div><b>Auto-école obligatoire</b><span>Fin des candidatures libres : la formation passe par un établissement agréé.</span></div>
+        <div><b>Vidéo-verbalisation</b><span>Constat des infractions par caméras et radars.</span></div>
+        <div><b>Paiement digital</b><span>Paiement des amendes par voie numérique.</span></div>
+        <div><b>Visite technique renforcée</b><span>Extension des centres à tout le territoire et contrôle numérique, notamment pour les minicars.</span></div>
+        <div><b>Récidive sanctionnée</b><span>Durcissement des sanctions pour les conducteurs récidivistes.</span></div>
+      </div>
+      <h3>Principales infractions contrôlées</h3>
+      <div class="tbl-wrap"><table class="inf">
+        <thead><tr><th>Infraction</th><th>Pourquoi c'est dangereux</th><th>Montant de l'amende</th></tr></thead>
+        <tbody id="inf"></tbody>
+      </table></div>
+      <p class="muted" style="font-size:.85rem;margin-top:10px">Les montants seront renseignés à partir du barème officiel du ministère en charge des Transports terrestres. Les infractions les plus graves (conduite en état d'ivresse, délit de fuite, homicide ou blessures involontaires) relèvent du juge et peuvent entraîner la suspension ou l'annulation du permis.</p>
+    </div>
+  </section>
+
+  <!-- ============ CIRCUIT ============ -->
+  <section class="sec" id="circuit">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Participation citoyenne</div><h2 class="mb0">Comment un signalement est-il traité ?</h2></div><p>De la réception à la clôture, chaque signalement suit six étapes. Chaque acteur intervient à un moment précis, selon ses compétences.</p></div>
+      <div class="flow" id="flow"></div>
+      <div class="grid g2" style="margin-top:28px;gap:22px;align-items:start">
+        <div>
+          <h3>Qui fait quoi ?</h3>
+          <div class="tbl-wrap"><table class="inf raci"><thead><tr><th>Acteur</th><th>Réceptionne / valide</th><th>Édite</th><th>Clôture</th></tr></thead><tbody id="raci"></tbody></table></div>
+        </div>
+        <div>
+          <h3>Qui est compétent pour quel problème ?</h3>
+          <div class="tbl-wrap"><table class="inf"><thead><tr><th>Problème signalé</th><th>Gestionnaire</th></tr></thead><tbody id="comp"></tbody></table></div>
+          <h3 style="margin-top:22px">Statuts et priorités</h3>
+          <div class="legend-row" id="stat"></div>
+          <div class="legend-row" id="prio"></div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:22px">Circuit proposé pour la plateforme, à valider en comité avec le ministère, l'ANASER, l'AGEROUTE, l'ADS, les collectivités et les forces de sécurité. Les délais sont des objectifs de service à fixer par convention entre les acteurs.</div>
+      <div class="btns"><a class="btn btn-j" href="carte.html?couche=signalements">Voir les signalements sur la carte</a></div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACTS ============ -->
+  <section class="sec sec-alt" id="contacts">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Urgences et services</div><h2 class="mb0">Contacts utiles</h2></div><p>Numéros gratuits depuis tous les téléphones.</p></div>
+      <div class="urg">
+        <a href="tel:17"><b>17</b><span>Police secours<small>Accident, danger sur la route, 24 h / 24</small></span></a>
+        <a href="tel:18"><b>18</b><span>Sapeurs-pompiers<small>Victimes à secourir, incendie, désincarcération</small></span></a>
+        <a href="tel:1515"><b>1515</b><span>SAMU<small>Détresse médicale, blessés graves</small></span></a>
+      </div>
+      <h3 style="margin-top:30px">Les services de la sécurité routière</h3>
+      <div class="contacts" id="ctc"></div>
+    </div>
+  </section>
+</main>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/circuit.js"></script>
+<script>
+YWW.mount('prev');
+/* ---------- bons gestes ---------- */
+const G=[
+ ['🎓','Bien apprendre à conduire',['Conducteurs'],['Formez-vous dans une auto-école agréée : le nouveau Code de la route la rend obligatoire.','Prenez le temps des leçons de conduite, y compris de nuit et sur route nationale.','Pour un permis professionnel (C, D, E), suivez une formation spécifique aux poids lourds ou au transport de voyageurs.'],"Un conducteur mal formé maîtrise moins bien son véhicule : le défaut de maîtrise est la deuxième cause d'accident (25 %)."],
+ ['🔒','La ceinture, à chaque trajet',['Conducteurs','Passagers','Parents'],['Attachez-vous à l\'avant comme à l\'arrière, même pour un court trajet en ville.','Vérifiez que tous les passagers sont attachés avant de démarrer.','Une ceinture qui ne fonctionne pas doit être réparée : c\'est un point de contrôle.'],"En cas de choc, la ceinture évite l'éjection et réduit fortement le risque de décès."],
+ ['⛑','Le casque attaché, conducteur et passager',['Motards'],['Portez un casque homologué, sangle attachée et serrée.','Le passager de la moto ou du « Jakarta » doit aussi être casqué.','Remplacez le casque après une chute, même sans dégât visible.'],"En ville, les collisions entre cyclomoteurs représentent 34 % des tués : la tête est la zone la plus exposée."],
+ ['🛞','Des pneumatiques en bon état',['Conducteurs','Transporteurs'],['Contrôlez la pression à froid au moins une fois par mois et avant un long trajet, roue de secours comprise.','Remplacez les pneus dès que les témoins d\'usure apparaissent, en cas d\'entaille, de hernie ou de déformation.','Évitez les pneus d\'occasion d\'origine inconnue et les pneus trop anciens, même peu usés : la gomme durcit avec le temps et la chaleur.','Changez les pneus par paire sur un même essieu.'],"Un pneu lisse ou sous-gonflé allonge le freinage et peut éclater à vitesse élevée, ce qui provoque des sorties de route et des tonneaux."],
+ ['⚖','Respecter la charge du véhicule',['Transporteurs','Conducteurs'],['Ne dépassez jamais le nombre de places assises inscrit sur la carte grise.','Respectez le poids total autorisé et répartissez la charge ; arrimez les bagages sur le toit et ne surchargez pas le porte-bagages.','Ne mélangez pas transport de marchandises et de passagers sans autorisation.','Passagers : refusez de monter dans un véhicule déjà plein et signalez-le.'],"La surcharge allonge le freinage, déséquilibre le véhicule et multiplie le nombre de victimes en cas d'accident."],
+ ['🚦','Adapter sa vitesse',['Conducteurs','Motards','Transporteurs'],['Respectez les limitations, et roulez moins vite de nuit, sous la pluie ou dans le sable.','Ralentissez dans les traversées de villages, près des écoles et des marchés.','Gardez une distance de sécurité d\'au moins deux secondes avec le véhicule qui précède.'],"L'excès de vitesse est en cause dans 20 % des accidents, et la gravité d'un choc augmente très vite avec la vitesse."],
+ ['🍺','Zéro alcool, zéro drogue',['Conducteurs','Motards','Transporteurs'],['Ne prenez pas le volant après avoir bu ou consommé des stupéfiants.','Désignez un conducteur sobre ou prenez un transport.','Attention à certains médicaments qui provoquent la somnolence.'],"L'alcool et les drogues ralentissent les réflexes et faussent l'appréciation des distances et des vitesses."],
+ ['📵','Le téléphone attendra',['Conducteurs','Motards'],['Ne téléphonez pas et n\'écrivez pas de message en conduisant.','Arrêtez-vous dans un endroit sûr pour appeler.','Préparez votre itinéraire avant de démarrer.'],"Quelques secondes le regard sur l'écran, c'est plusieurs dizaines de mètres parcourus à l'aveugle."],
+ ['😴','Prévenir la fatigue',['Conducteurs','Transporteurs'],['Dormez suffisamment avant un long trajet.','Faites une pause au moins toutes les deux heures.','Chauffeurs professionnels : respectez les temps de conduite et de repos.'],"La fatigue est une cause majeure des accidents de nuit sur les corridors."],
+ ['🔧','Entretenir son véhicule',['Conducteurs','Transporteurs'],['Faites contrôler régulièrement freins, direction, suspensions et éclairage.','Passez la visite technique dans les délais et réalisez la contre-visite si l\'avis est défavorable.','Gardez à bord le triangle de présignalisation, la trousse de secours et l\'extincteur.'],"La défaillance mécanique est directement en cause dans 4 % des accidents, mais elle aggrave souvent les autres causes."],
+ ['🔦','Voir et être vu',['Piétons','Motards','Conducteurs'],['Allumez vos feux dès la tombée du jour et vérifiez qu\'ils fonctionnent tous.','Piétons et cyclistes : portez des vêtements clairs ou un gilet réfléchissant la nuit.','Charrettes : équipez-les de réflecteurs et d\'un éclairage.'],"Sur les grands axes, 42 % des accidents ont lieu entre 18 h et 6 h, souvent sur des voies peu ou pas éclairées."],
+ ['🚶','Piétons : traverser en sécurité',['Piétons','Parents'],['Traversez sur les passages piétons et aux feux, jamais entre deux véhicules arrêtés.','Regardez à gauche, à droite, puis encore à gauche.','Tenez les jeunes enfants par la main près de la route.'],"Les piétons représentent 4 % des accidents en ville mais 17 % des tués."],
+ ['👶','Transporter les enfants',['Parents','Passagers'],['Installez les enfants à l\'arrière, attachés ou dans un siège adapté à leur taille.','Ne transportez pas d\'enfant sur une moto sans casque adapté.','Ne laissez jamais un enfant seul dans un véhicule.'],"Un enfant non attaché est projeté même à faible vitesse."]
+];
+const PUBS=['Tous','Conducteurs','Motards','Transporteurs','Piétons','Passagers','Parents'];
+const pub=document.getElementById('pub');pub.innerHTML=PUBS.map((p,i)=>`<button class="chip" aria-pressed="${i===0}" data-p="${p}">${p}</button>`).join('');
+const renderG=p=>document.getElementById('gestes').innerHTML=G.filter(g=>p==='Tous'||g[2].includes(p)).map(g=>`<article class="card geste"><div class="ic" aria-hidden="true">${g[0]}</div><h3 class="mb0">${g[1]}</h3><div class="pubs">${g[2].map(x=>`<span>${x}</span>`).join('')}</div><ul>${g[3].map(x=>`<li>${x}</li>`).join('')}</ul><p class="why mb0"><b>Pourquoi ?</b> ${g[4]}</p></article>`).join('');
+pub.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{pub.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));renderG(b.dataset.p)}));renderG('Tous');
+
+/* ---------- check-list ---------- */
+const CK=[['Pneumatiques','Pression vérifiée à froid, roue de secours comprise, pas d\'usure ni d\'entaille'],['Freins et direction','Pas de bruit anormal, pédale ferme, pas de jeu dans le volant'],['Feux et clignotants','Tous les feux fonctionnent, phares propres et bien réglés'],['Niveaux','Huile, liquide de refroidissement, liquide de frein, lave-glace'],['Charge','Nombre de places respecté, bagages arrimés, porte-bagages non surchargé'],['Papiers à bord','Permis, carte grise, attestation d\'assurance, visite technique à jour'],['Équipements de sécurité','Triangle, gilet, trousse de secours, extincteur'],['Conducteur reposé','Bonne nuit de sommeil, pauses prévues toutes les deux heures, aucun alcool'],['Itinéraire préparé','Départ de jour si possible, points de pause repérés, zones accidentogènes consultées'],['Ceintures et casques','Chaque passager a une place et une ceinture ; casques pour les deux-roues']];
+const KEY='yww-checklist';let st=[];try{st=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
+const ck=document.getElementById('check');
+function renderC(){ck.innerHTML=CK.map((c,i)=>`<label><input type="checkbox" data-i="${i}" ${st[i]?'checked':''}><span>${c[0]}<small>${c[1]}</small></span></label>`).join('');
+  const n=st.filter(Boolean).length,p=Math.round(n/CK.length*100);document.getElementById('pct').textContent=p+' %';document.getElementById('bar').style.width=p+'%';
+  ck.querySelectorAll('input').forEach(i=>i.addEventListener('change',()=>{st[+i.dataset.i]=i.checked;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}renderC()}));}
+document.getElementById('reset').addEventListener('click',()=>{st=[];try{localStorage.removeItem(KEY)}catch(e){}renderC()});renderC();
+
+/* ---------- démarches ---------- */
+const DM=[
+ ['🪪','Obtenir le permis de conduire','Inscription, formation, examens et délivrance',
+  ['S\'inscrire dans une auto-école agréée, qui constitue et dépose le dossier.','Passer la visite médicale d\'aptitude auprès d\'un médecin ou d\'un centre agréé.','Suivre la formation théorique, puis passer l\'examen du code de la route (questionnaire).','Suivre les leçons de conduite, puis passer l\'examen pratique avec un inspecteur.','Recevoir le permis provisoire, puis retirer le permis définitif sécurisé.'],
+  ['Pièce d\'identité (copie)','Certificat de résidence','Photos d\'identité','Certificat médical d\'aptitude','Formulaire de demande et timbres fiscaux'],
+  'Auto-école agréée, centre d\'examen du permis de conduire, Direction des transports routiers (DTR) et ses services régionaux.',
+  'Catégories : A1 et A (motos), B (véhicules légers), C1 et C (poids lourds), D (transport de personnes), E (remorques), F (véhicules adaptés). Chaque catégorie a son âge minimal.'],
+ ['🔁','Renouveler ou remplacer un permis','Perte, vol, détérioration, permis expiré',
+  ['En cas de perte ou de vol, faire une déclaration au commissariat ou à la brigade de gendarmerie.','Constituer le dossier de remplacement ou de renouvellement.','Déposer le dossier auprès du service des permis de conduire et payer les droits.','Suivre le dossier puis retirer le nouveau permis.'],
+  ['Pièce d\'identité','Ancien permis ou déclaration de perte','Justificatif du groupe sanguin','Certificat médical récent pour un permis expiré ou professionnel','Timbre fiscal'],
+  'Direction des transports routiers (DTR) – service des permis de conduire ; divisions régionales des transports.',
+  'Le permis sécurisé comporte une puce et le groupe sanguin du titulaire. Le suivi du dossier peut se faire en ligne.'],
+ ['📄','Immatriculer un véhicule ou changer de propriétaire','Carte grise, mutation, véhicule importé',
+  ['Véhicule d\'occasion déjà immatriculé : faire légaliser l\'acte de vente, puis demander la mutation de la carte grise.','Véhicule importé : dédouanement au port, contrôle du numéro de châssis par la police, puis demande de carte grise.','Payer les droits d\'enregistrement et la taxe de la carte grise.','Faire poser les plaques d\'immatriculation, souscrire l\'assurance et passer la visite technique.'],
+  ['Pièce d\'identité de l\'acheteur','Acte de vente légalisé et ancienne carte grise barrée « vendu »','Certificat de mise en circulation (véhicule importé)','Attestation d\'assurance','Certificat de non-gage si le véhicule vient d\'une autre région'],
+  'Direction des transports routiers (DTR) et divisions régionales des transports ; Douanes pour les véhicules importés.',
+  'Les véhicules importés sont soumis à une limite d\'âge. Renseignez-vous avant tout achat à l\'étranger.'],
+ ['🔍','Passer la visite technique','Contrôle obligatoire et périodique',
+  ['Prendre rendez-vous ou se présenter au centre de contrôle technique.','Présenter le véhicule et les documents.','Le contrôleur vérifie notamment freins, direction, pneumatiques, éclairage, émissions et, pour les transports en commun, le nombre de places et les porte-bagages.','Avis favorable : le certificat de visite est délivré. Avis défavorable : réparer, puis repasser en contre-visite.'],
+  ['Carte grise','Attestation d\'assurance','Dernier certificat de visite technique'],
+  'Centre de contrôle technique de Hann (Dakar), centre de Diamniadio et centres régionaux.',
+  'La visite est périodique pour les véhicules de transport public et privé. Les minicars de 12 à 19 places sont contrôlés tous les six mois. Rouler sans visite technique valide est une infraction.'],
+ ['🛡','Assurer son véhicule','Responsabilité civile obligatoire',
+  ['Souscrire au minimum une assurance responsabilité civile auprès d\'une compagnie agréée.','Garder l\'attestation d\'assurance à bord.','Renouveler le contrat avant son échéance.'],
+  ['Carte grise','Pièce d\'identité','Permis de conduire'],
+  'Compagnies d\'assurance agréées (régime du Code CIMA) ; Direction des assurances pour les réclamations.',
+  'Rouler sans assurance est une infraction. En cas d\'accident, le conducteur non assuré doit indemniser lui-même les victimes.'],
+ ['🚑','Après un accident : que faire ?','Protéger, alerter, secourir, déclarer',
+  ['Protéger : allumer les feux de détresse, mettre le gilet, poser le triangle, faire sortir les passagers côté accotement.','Alerter : appeler le 18 (pompiers) ou le 1515 (SAMU) s\'il y a des blessés, et le 17 (police).','Secourir : ne pas déplacer un blessé sauf danger immédiat (incendie, sur-accident) ; le couvrir et lui parler.','Constater : remplir un constat amiable s\'il n\'y a que des dégâts matériels ; sinon, les forces de l\'ordre établissent un procès-verbal.','Déclarer : prévenir votre assureur le plus vite possible, dans le délai prévu par votre contrat.'],
+  ['Permis, carte grise, attestation d\'assurance','Constat amiable signé','Coordonnées des témoins','Photos des lieux et des véhicules'],
+  'Police (en agglomération) ou Gendarmerie (en rase campagne) pour le constat ; votre assureur pour la déclaration.',
+  'Quitter les lieux d\'un accident sans s\'arrêter (délit de fuite) est une infraction grave.'],
+ ['💳','Payer ou contester une amende','Contraventions et nouveaux moyens de paiement',
+  ['Vérifier l\'infraction, le lieu et le montant sur l\'avis remis par l\'agent ou reçu après un contrôle automatique.','Payer selon les modalités indiquées. Le paiement digital est en cours de déploiement avec le nouveau Code de la route.','Pour contester, adresser une réclamation motivée dans les délais indiqués sur l\'avis.'],
+  ['Avis de contravention','Pièce d\'identité','Justificatifs utiles à une contestation'],
+  'Service indiqué sur l\'avis de contravention ; Trésor public.',
+  'Exigez toujours un justificatif de paiement. Méfiez-vous des barèmes non officiels qui circulent sur les réseaux sociaux.'],
+ ['🚌','Exercer une activité de transport ou d\'auto-école','Agréments et autorisations',
+  ['Constituer un dossier de demande d\'agrément (auto-école) ou d\'autorisation de transport public.','Justifier des véhicules, des moniteurs ou des chauffeurs qualifiés, et des locaux.','Faire contrôler les véhicules et obtenir les cartes de transport.'],
+  ['Statuts ou registre de commerce','Justificatifs de qualification','Cartes grises, assurances, visites techniques'],
+  'Ministère des Infrastructures et des Transports terrestres et aériens (MITTA) – Direction des transports routiers ; CETUD pour le transport urbain à Dakar.',
+  'Les auto-écoles et les transporteurs sont des relais essentiels de la prévention : l\'observatoire peut leur fournir les supports de sensibilisation.']
+];
+document.getElementById('dem').innerHTML=DM.map((d,i)=>`<details class="dem"${i===0?' open':''}><summary><span class="ic" aria-hidden="true">${d[0]}</span><span><h3>${d[1]}</h3><p>${d[2]}</p></span></summary>
+  <div class="dem-body"><div><h4>Étapes</h4><ol>${d[3].map(x=>`<li>${x}</li>`).join('')}</ol><h4>Pièces habituellement demandées</h4><ul>${d[4].map(x=>`<li>${x}</li>`).join('')}</ul></div>
+  <div><div class="where"><h4>Où s'adresser</h4><p>${d[5]}</p></div><div class="note" style="margin-top:12px;font-size:.9rem"><b>Bon à savoir :</b> ${d[6]}</div></div></div></details>`).join('');
+
+/* ---------- infractions ---------- */
+const INF=[['Excès de vitesse','Allonge le freinage, aggrave fortement les chocs ; en cause dans 20 % des accidents.'],['Non-port de la ceinture','Risque d\'éjection et de blessures mortelles même à faible vitesse.'],['Non-port du casque (deux-roues)','Traumatisme crânien, première cause de décès des motards.'],['Téléphone tenu en main en conduisant','Détourne l\'attention et le regard de la route.'],['Surcharge de passagers ou de marchandises','Freinage allongé, risque de renversement, victimes plus nombreuses.'],['Refus de priorité, non-respect d\'un feu ou d\'un stop','Collisions aux carrefours, souvent avec des usagers vulnérables.'],['Dépassement dangereux','Collisions frontales parmi les plus meurtrières.'],['Défaut de visite technique','Véhicule potentiellement défaillant (freins, pneus, éclairage).'],['Défaut d\'assurance','Les victimes risquent de ne pas être indemnisées.'],['Feux absents ou défectueux','Véhicule invisible la nuit ; 42 % des accidents des grands axes ont lieu entre 18 h et 6 h.'],['Stationnement dangereux ou sans présignalisation','Obstacle invisible, sur-accidents sur les grands axes.']];
+document.getElementById('inf').innerHTML=INF.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="tbd">Barème officiel à intégrer</td></tr>`).join('');
+
+/* ---------- circuit ---------- */
+const C=YCircuit;
+const WHO_COL=['#535a66','#e31b23','#e31b23','#00853f','#00853f','#e31b23'];
+const WHO_SHORT=['Plateforme','ANASER','ANASER','Gestionnaire','Gestionnaire','ANASER'];
+document.getElementById('flow').innerHTML=C.ETAPES.map((e,i)=>`<div class="st"><h4>${e.nom}</h4><span class="who" style="background:${WHO_COL[i]}">${WHO_SHORT[i]}</span><p><b style="color:var(--texte)">${e.qui}</b></p><p>${e.role}</p><div class="dl">⏱ ${e.delai}</div></div>`).join('');
+document.getElementById('raci').innerHTML=C.RACI.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+const COMP=[['Chaussée dégradée, signalisation, feu tricolore sur une route nationale ou classée','AGEROUTE (entretien financé par le FERA)'],['Même problème sur une autoroute à péage','ADS – Autoroutes du Sénégal et l\'exploitant de la section'],['Même problème sur une voirie communale','Commune ou ville'],['Route mal éclairée','Commune (avec l\'ANER pour les lampadaires solaires) ; ADS sur autoroute'],['Traversée piétonne dangereuse','Gestionnaire de la voie, avec la commune et le CETUD à Dakar'],['Obstacle, sable, animaux en divagation','Gestionnaire de la voie ; Police ou Gendarmerie pour la mise en sécurité'],['Vitesse excessive récurrente','Police nationale (agglomération) ou Gendarmerie (rase campagne), avec les contrôles de l\'ANASER'],['Autre ou à requalifier','ANASER']];
+document.getElementById('comp').innerHTML=COMP.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td></tr>`).join('');
+document.getElementById('stat').innerHTML=Object.entries(C.STATUTS).map(([k,v])=>`<span><i style="background:${v.col}"></i>${k}${v.ouvert?'':' (clos)'}</span>`).join('');
+document.getElementById('prio').innerHTML=Object.entries(C.PRIORITES).map(([k,v])=>`<span><i style="background:${v[1]}"></i>${v[0]}</span>`).join('');
+
+/* ---------- contacts ---------- */
+const CT=[['Ministère des Infrastructures et des Transports terrestres et aériens (MITTA)','Définit la politique nationale de sécurité routière et la réglementation.','Réglementation, agréments, transport public'],
+ ['ANASER','Agence nationale de la sécurité routière : prévention, contrôles mixtes, collecte et analyse des données.','Campagnes de sensibilisation, signalements, données'],
+ ['Direction des transports routiers (DTR)','Permis de conduire, immatriculation, cartes de transport, avec ses divisions régionales.','Permis, carte grise, autorisations'],
+ ['AGEROUTE','Agence des travaux et de gestion des routes : construction et entretien du réseau classé.','Chaussée dégradée, signalisation sur route nationale'],
+ ['FERA','Fonds d\'entretien routier autonome : finance l\'entretien du réseau routier.','Financement de l\'entretien'],
+ ['ADS – Autoroutes du Sénégal','Développement et entretien des autoroutes, avec les exploitants des sections à péage.','Incidents sur autoroute'],
+ ['CETUD','Conseil exécutif des transports urbains durables : mobilité urbaine de la région de Dakar.','Transport urbain, aménagements à Dakar'],
+ ['Communes et villes','Voirie communale, éclairage public, abords des écoles et des marchés.','Éclairage, voirie de quartier'],
+ ['Centres de contrôle technique','Visites techniques et contre-visites (Hann, Diamniadio et centres régionaux).','Visite technique'],
+ ['Police nationale et Gendarmerie nationale','Contrôle du respect du code, constats d\'accident, sécurité des axes.','Accident, infraction, danger immédiat'],
+ ['Brigade nationale des sapeurs-pompiers (BNSP)','Secours aux victimes et désincarcération.','Urgence : 18'],
+ ['Compagnies d\'assurance','Assurance obligatoire et indemnisation des victimes.','Déclaration de sinistre']];
+document.getElementById('ctc').innerHTML=CT.map(c=>`<div class="card"><h3>${c[0]}</h3><p>${c[1]}</p><div class="for"><b>Pour :</b> ${c[2]}</div></div>`).join('');
+
+/* ---------- sous-menu actif ---------- */
+const links=[...document.querySelectorAll('.subnav a')];
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id))}),{rootMargin:'-45% 0px -50% 0px'});
+document.querySelectorAll('main section[id]').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

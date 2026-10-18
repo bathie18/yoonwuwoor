@@ -10,6 +10,8 @@ const YWW = (() => {
     map:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
     chevron:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>',
     moon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>',
+    prev:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>',
+    circuit:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/></svg>',
     burger:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
   };
   const logo = `<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
@@ -25,7 +27,9 @@ const YWW = (() => {
     ['phototheque.html','photo','Photothèque','Images des campagnes et du terrain'],
     ['glossaire.html','glo','Glossaire','Les définitions de la sécurité routière'],
     ['statistiques.html','stats','Statistiques & indicateurs','Bilans annuels, causes, usagers, axes'],
-    ['dataviz.html','dataviz','Dataviz des territoires','Régions, départements et communes']
+    ['dataviz.html','dataviz','Dataviz des territoires','Régions, départements et communes'],
+    ['demarches.html','prev','Prévention et démarches','Bons gestes, permis, carte grise, amendes'],
+    ['demarches.html#circuit','circuit','Traitement des signalements','Qui réceptionne, valide, traite et clôture']
   ];
   function header(active){
     const cur = p => p===active ? ' aria-current="page"' : '';
@@ -41,7 +45,7 @@ const YWW = (() => {
         <div class="dd"><button aria-expanded="false" aria-haspopup="true"${active==='outil'?' style="box-shadow:inset 0 -3px 0 #f5b700"':''}>Boîte à outils ${I.chevron}</button>
           <div class="dd-menu">${outils.map(o=>`<a href="${o[0]}"><span class="ic">${I[o[1]]}</span><span><b>${o[2]}</b><small>${o[3]}</small></span></a>`).join('')}</div>
         </div>
-        <a href="index.html#acteurs">Acteurs</a>
+        <a href="demarches.html"${cur('prev')}>Prévention &amp; démarches</a>
         <button class="theme-btn" aria-label="Changer de thème" title="Thème clair / sombre">${I.moon}</button>
       </nav>
     </div></header>`;
@@ -52,7 +56,7 @@ const YWW = (() => {
         <div><a class="brand" href="index.html" style="margin-bottom:14px">${logo}<span class="brand-txt"><b>Yoon Wu Wóor</b><small>« La route sûre »</small></span></a>
           <p>Plateforme de référence des données de sécurité routière au Sénégal : observer, comprendre, agir. Chaque trajet compte.</p></div>
         <div><h4>Observatoire</h4><a href="statistiques.html">Chiffres clés</a><a href="dataviz.html">Dataviz des territoires</a><a href="carte.html">Carte interactive</a><a href="index.html#apropos">À propos</a></div>
-        <div><h4>Boîte à outils</h4>${outils.slice(0,4).map(o=>`<a href="${o[0]}">${o[2]}</a>`).join('')}</div>
+        <div><h4>Boîte à outils</h4>${outils.slice(0,4).map(o=>`<a href="${o[0]}">${o[2]}</a>`).join('')}<a href="demarches.html">Prévention et démarches</a></div>
         <div><h4>Partenaires</h4><a href="index.html#acteurs">ANASER</a><a href="index.html#acteurs">CETUD</a><a href="index.html#acteurs">AGEROUTE</a><a href="index.html#acteurs">Forces de défense et de sécurité</a></div>
       </div>
       <div class="bottom"><span>Prototype conçu par CEGIT — Centre d'Expertise en Géomatique et Ingénierie Territoriale · cegitgroup.com</span><span>Données nationales 2025 : ANASER. Données infranationales et points d'intérêt : simulés pour la démonstration. Limites administratives : GADM via mapSenegal.</span></div>
