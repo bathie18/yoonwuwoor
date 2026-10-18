@@ -144,7 +144,7 @@ Promise.all(['region','departement','commune'].map(l=>YWW.json(`data/${l==='regi
   GEO.departement.features.forEach(x=>{names[x.properties.GID_2]=x.properties.NAME;parentOf[x.properties.GID_2]=x.properties.GID_1});
   GEO.commune.features.forEach(x=>{names[x.properties.GID_4]=x.properties.NAME;parentOf[x.properties.GID_4]=x.properties.GID_2});
   YWW.json('data/labels.json').then(l=>{LBLCTL=YMap.labels(map,l)});
-  YWW.json('data/routes.geojson').then(r=>{map.createPane('rt').style.zIndex=450;L.geoJSON(r,{pane:'rt',interactive:false,style:f=>({color:f.properties.type==='AUTOROUTE'?'#7b3fbf':'#12161d',weight:f.properties.type==='AUTOROUTE'?3:1.6,opacity:.55})}).addTo(map)});
+  YWW.json('data/routes.geojson').then(r=>{map.createPane('rt').style.zIndex=450;L.geoJSON({type:'FeatureCollection',features:r.features.filter(f=>f.properties.type==='AUTOROUTE'||f.properties.type==='RN')},{pane:'rt',interactive:false,style:f=>({color:f.properties.type==='AUTOROUTE'?'#7b3fbf':'#12161d',weight:f.properties.type==='AUTOROUTE'?3:1.6,opacity:.55})}).addTo(map)});
   document.getElementById('pdf').addEventListener('click',async e=>{if(!S.sel)return;const b=e.currentTarget,t=b.textContent;b.textContent='Génération du rapport…';b.disabled=true;try{await YReport.build(S.sel.level,S.sel.id,S.year)}finally{b.textContent=t;b.disabled=false}});
   const ys=document.getElementById('year');ST.meta.annees.slice().reverse().forEach(y=>ys.insertAdjacentHTML('beforeend',`<option>${y}</option>`));
   const dl=document.getElementById('terr-list');

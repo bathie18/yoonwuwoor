@@ -33,9 +33,9 @@ const YReport = (() => {
     ctx.features.forEach(f => draw(f.geometry, '#f4f1ea', '#d9d2c3', 1));
     draw(ft.geometry, 'rgba(245,183,0,.16)', '#12161d', 3);
     // routes
-    D.rou.features.forEach(f => { const ls = f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates;
-      g.strokeStyle = f.properties.type === 'AUTOROUTE' ? '#7b3fbf' : '#e0a400'; g.lineWidth = f.properties.type === 'AUTOROUTE' ? 4 : 3;
-      ls.forEach(l => { g.beginPath(); l.forEach(([x, y], i) => { const [a, c] = px(x, y); i ? g.lineTo(a, c) : g.moveTo(a, c); }); g.stroke(); }); });
+    D.rou.features.filter(f => f.properties.type !== 'RD').forEach(f => { const ls = f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      const T = f.properties.type; g.strokeStyle = T === 'AUTOROUTE' ? '#7b3fbf' : T === 'RN' ? '#e0a400' : '#f26b2b'; g.lineWidth = T === 'AUTOROUTE' ? 4 : T === 'RN' ? 3 : 1.6; g.setLineDash(f.properties.revet === 'Non bitumée' ? [8, 6] : []);
+      ls.forEach(l => { g.beginPath(); l.forEach(([x, y], i) => { const [a, c] = px(x, y); i ? g.lineTo(a, c) : g.moveTo(a, c); }); g.stroke(); }); }); g.setLineDash([]);
     // accidents
     accRows.forEach(r => { const [a, c] = px(r[4], r[3]); g.beginPath(); g.arc(a, c, r[6] === 'M' ? 7 : 5, 0, 7); g.fillStyle = r[6] === 'M' ? '#e31b23' : r[6] === 'G' ? '#ff7a00' : '#f5b700'; g.globalAlpha = .85; g.fill(); g.globalAlpha = 1; g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.stroke(); });
     return cv.toDataURL('image/png');
@@ -116,7 +116,7 @@ const YReport = (() => {
     h2('Localisation des accidents', 134);
     doc.addImage(mapImage(D, level, ft, rows), 'PNG', M, 139, 100, 71);
     doc.setFontSize(8); doc.setTextColor(...C.gris);
-    const lg = [['#e31b23', 'Accident mortel'], ['#ff7a00', 'Accident grave'], ['#f5b700', 'Accident léger'], ['#e0a400', 'Route nationale'], ['#7b3fbf', 'Autoroute (tracé indicatif)']];
+    const lg = [['#e31b23', 'Accident mortel'], ['#ff7a00', 'Accident grave'], ['#f5b700', 'Accident léger'], ['#e0a400', 'Route nationale'], ['#f26b2b', 'Route régionale'], ['#7b3fbf', 'Autoroute']];
     lg.forEach((l, i) => { doc.setFillColor(...hex(l[0])); doc.circle(M + 106, 145 + i * 6, 1.6, 'F'); doc.text(l[1], M + 110, 146 + i * 6); });
     doc.setFontSize(8.5); doc.setTextColor(...C.asph);
     doc.text(doc.splitTextToSize(`${rows.length} accidents géolocalisés (échantillon 2021-${year}), dont ${rows.filter(r => r[F.grav] === 'M').length} mortels.`, 70), M + 106, 180);

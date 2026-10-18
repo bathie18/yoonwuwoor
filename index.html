@@ -142,7 +142,7 @@ Promise.all([YWW.json('data/regions.geojson'),YWW.json('data/routes.geojson'),YW
   const path=c=>c.map(r=>'M'+r.map(p=>sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1)).join('L')+'Z').join('');
   let s='';
   r.features.forEach(f=>{const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;s+=`<path d="${polys.map(path).join('')}" fill="var(--surface)" stroke="var(--bord)" stroke-width="1.2"/>`});
-  ro.features.forEach(f=>{const g=f.geometry;const ls=g.type==='LineString'?[g.coordinates]:g.coordinates;s+=`<path d="${ls.map(l=>'M'+l.map(p=>sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1)).join('L')).join('')}" fill="none" stroke="#f5b700" stroke-width="2"/>`});
+  ro.features.filter(f=>f.properties.type==='AUTOROUTE'||(f.properties.type==='RN'&&f.properties.revet==='Bitumée')).forEach(f=>{const g=f.geometry;const ls=g.type==='LineString'?[g.coordinates]:g.coordinates;s+=`<path d="${ls.map(l=>'M'+l.map(p=>sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1)).join('L')).join('')}" fill="none" stroke="${f.properties.type==='AUTOROUTE'?'#7b3fbf':'#f5b700'}" stroke-width="${f.properties.type==='AUTOROUTE'?3:2}"/>`});
   p.features.filter(f=>f.properties.cat==='zone').forEach(f=>{const c=f.geometry.coordinates;s+=`<circle cx="${sx(c[0]).toFixed(1)}" cy="${sy(c[1]).toFixed(1)}" r="${2+f.properties.grav*1.6}" fill="#e31b23" fill-opacity=".55"/>`});
   document.getElementById('mini-map').innerHTML=s;
 });

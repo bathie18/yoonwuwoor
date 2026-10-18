@@ -44,6 +44,10 @@
     <div class="cls-list" id="scls-list"></div>
     <a class="side-link" href="demarches.html#circuit">Comment un signalement est-il traité ?</a>
     <button class="btn side-btn" style="background:var(--rouge);color:#fff" type="button" id="sig-side">Signaler un problème sur la route</button>
+    <h4>Réseau routier et ferroviaire</h4>
+    <div id="lay-net"></div>
+    <h4>Équipements de la route</h4>
+    <div id="lay-eq"></div>
     <h4>Référentiels</h4>
     <div id="lay-ref"></div>
     <div class="note" style="margin-top:16px;font-size:.85rem">Accidents, équipements, fiches et signalements <b>simulés</b> pour la démonstration. Tracés autoroutiers indicatifs. Version cible : bases ANASER, DTR, BNSP et forces de sécurité.</div>
@@ -189,15 +193,68 @@ let ACC=[],SECNAME={},groups={},accLayer=L.layerGroup(),SIG=[],sigLayer=L.layerG
 const store={get(){try{return JSON.parse(localStorage.getItem('yww-signalements')||'[]')}catch(e){return []}},set(v){try{localStorage.setItem('yww-signalements',JSON.stringify(v))}catch(e){}}};
 const params=new URLSearchParams(location.search), only=params.get('couche');
 
-Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.geojson','communes.geojson','accidents.json','labels.json','signalements.json'].map(f=>YWW.json('data/'+f))).then(([pts,routes,regs,deps,coms,acc,labels,sig])=>{
+Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.geojson','communes.geojson','accidents.json','labels.json','signalements.json','voie_ferree.geojson','equipements.geojson'].map(f=>YWW.json('data/'+f))).then(([pts,routes,regs,deps,coms,acc,labels,sig,rail,equip])=>{
   ACC=acc.lignes.map(r=>Object.fromEntries(acc.champs.map((k,i)=>[k,r[i]])));
   pts.features.filter(f=>f.properties.cat==='secours').forEach(f=>SECNAME[f.properties.id]=f.properties.nom);
   /* référentiels */
   groups.regions=L.geoJSON(regs,{interactive:false,style:{color:'#12161d',weight:2.2,fill:false,opacity:.75}});
   groups.deps=L.geoJSON(deps,{interactive:false,style:{color:'#535a66',weight:1.2,dashArray:'5 4',fill:false}});
   groups.communes=L.geoJSON(coms,{interactive:false,style:{color:'#8d94a0',weight:.6,fill:false}});
-  groups.rn=L.geoJSON({type:'FeatureCollection',features:routes.features.filter(f=>f.properties.type==='RN')},{style:{color:'#e0a400',weight:4,opacity:.95},onEachFeature:(f,l)=>l.bindTooltip(f.properties.nom+' ('+f.properties.route+')',{sticky:true})});
-  groups.auto=L.geoJSON({type:'FeatureCollection',features:routes.features.filter(f=>f.properties.type==='AUTOROUTE')},{style:{color:'#7b3fbf',weight:6,opacity:.95},onEachFeature:(f,l)=>l.bindTooltip(f.properties.nom+' – '+f.properties.route+' (tracé indicatif)',{sticky:true})});
+  /* ---- réseau routier classé (AGEROUTE) et voie ferrée ---- */
+  map.createPane('net').style.zIndex=410;
+  const NET={AUTOROUTE:['#7b3fbf',6,'Autoroutes'],RN:['#e0a400',4,'Routes nationales'],RR:['#f26b2b',2.6,'Routes régionales'],RD:['#8b5e34',1.7,'Routes départementales']};
+  const netTip=p=>`<b>${p.nom}</b><br>${p.revet} · ${fmt1(p.km)} km · gestion ${p.gest}`;
+  const netLayer=T=>L.geoJSON({type:'FeatureCollection',features:routes.features.filter(f=>f.properties.type===T)},{pane:'net',
+    style:f=>({color:NET[T][0],weight:NET[T][1],opacity:.95,dashArray:f.properties.revet==='Non bitumée'?(T==='RD'?'4 4':'8 6'):null,lineCap:'round'}),
+    onEachFeature:(f,l)=>l.bindTooltip(netTip(f.properties),{sticky:true})});
+  groups.auto=netLayer('AUTOROUTE');groups.rn=netLayer('RN');groups.rr=netLayer('RR');groups.rd=netLayer('RD');
+  groups.vf=L.layerGroup([L.geoJSON(rail,{pane:'net',interactive:false,style:{color:'#12161d',weight:5,opacity:.9}}),L.geoJSON(rail,{pane:'net',style:{color:'#fff',weight:2.4,dashArray:'10 10',opacity:1},onEachFeature:(f,l)=>l.bindTooltip(`<b>Voie ferrée</b><br>${fmt1(f.properties.km)} km`,{sticky:true})})]);
+  /* écussons de numéro de route, selon l'échelle */
+  const shields=L.layerGroup(),SH_MIN={AUTOROUTE:8,RN:9,RR:10,RD:11};
+  routes.features.forEach(f=>{const p=f.properties;if(!p.ref)return;const ls=f.geometry.type==='LineString'?[f.geometry.coordinates]:f.geometry.coordinates;const l=ls.reduce((a,b)=>b.length>a.length?b:a);
+    if(l.length<2)return;const c=l[Math.floor(l.length/2)];
+    const m=L.marker([c[1],c[0]],{interactive:false,keyboard:false,icon:L.divIcon({className:'',iconSize:null,html:`<span class="shield sh-${p.type}">${p.ref==='Ila Touba'?'Ila Touba':p.ref}</span>`})});m._t=p.type;m.addTo(shields)});
+  const updShields=()=>{const z=map.getZoom();shields.eachLayer(m=>{const vis=z>=SH_MIN[m._t]&&map.hasLayer(groups[{AUTOROUTE:'auto',RN:'rn',RR:'rr',RD:'rd'}[m._t]]);const el=m.getElement();if(el)el.style.display=vis?'':'none'})};
+  shields.addTo(map);map.on('zoomend overlayadd overlayremove layeradd layerremove',()=>setTimeout(updShields,0));
+
+  /* ---- équipements de la route (projet QGIS + RGE) ---- */
+  const EQ={
+    pk:['#12161d','PK','Points kilométriques','<rect x="7" y="3" width="10" height="18" rx="5"/><path d="M10 9h4"/>'],
+    station:['#0e9f6e','⛽','Stations-service','<path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3"/><path d="M7 7h4"/>'],
+    parking:['#1d4ed8','P','Parkings','<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M10 17V7h3a3 3 0 0 1 0 6h-3"/>'],
+    arret:['#0891b2','🚌','Arrêts de bus','<rect x="5" y="3" width="14" height="14" rx="2"/><path d="M5 11h14M8 21v-4M16 21v-4"/>'],
+    pn:['#b91c1c','✕','Passages à niveau','<path d="M5 5l14 14M19 5 5 19"/>'],
+    aire:['#65a30d','☕','Aires d\'autoroute','<path d="M4 20h16M6 20V9l6-5 6 5v11"/>'],
+    acces:['#a16207','⇄','Accès de service','<path d="M4 8h13l-3-3M20 16H7l3 3"/>'],
+    gare_fer:['#334155','🚆','Gares ferroviaires','<rect x="6" y="3" width="12" height="13" rx="3"/><path d="M6 10h12M9 20l-2 2M15 20l2 2M9 16v4M15 16v4"/>'],
+    aeroport:['#475569','✈','Aéroports','<path d="M21 15v-2l-8-5V4a1.5 1.5 0 0 0-3 0v4l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5.5z"/>']
+  };
+  const LAB={route:'Route',pk:'Point kilométrique',type_point:'Type de repère',longueur_axe:'Longueur de l\'axe (km)',classe_route:'Classe de la route',type_barri:'Type de barrière',passage_pi:'Passage piéton',autoroute:'Autoroute',services:'Services disponibles',exploitant:'Exploitant',carburants:'Carburants',paiement:'Moyens de paiement',accessible:'Accessible PMR',capacite:'Capacité (places)',couvert:'Couvert',tarif:'Tarification',ligne:'Ligne',abri:'Abri voyageurs',type_arret:'Type d\'arrêt',type_acces:'Type d\'accès',statut:'Statut',type_aero:'Catégorie',quartier:'Quartier',commune:'Commune',departement:'Département'};
+  const eqIcon=c=>L.divIcon({className:'',iconSize:[24,24],iconAnchor:[12,12],html:`<div class="eq-ic" style="background:${EQ[c][0]}"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${EQ[c][3]}</svg></div>`});
+  const pkIcon=p=>L.divIcon({className:'',iconSize:null,iconAnchor:[0,0],html:`<span class="pk-ic${p.pk%50===0?' big':''}"><b>${p.route==='Ila Touba'?'IT':p.route}</b>${p.pk}</span>`});
+  const srcBadge=s=>`<span class="pill ${/fictive/.test(s)?'m':/RGE/.test(s)?'':'l'}" style="${/RGE/.test(s)?'background:#00853f;color:#fff;border-color:#00853f':''}">${s}</span>`;
+  function ficheEq(p,ll){
+    const near=ACC.filter(r=>map.distance(ll,[r.lat,r.lon])<(p.cat==='pk'?2500:1000));
+    const tues=near.reduce((a,r)=>a+r.tues,0);
+    const rows=Object.entries(p).filter(([k])=>LAB[k]&&!(k==='commune'&&!p[k])).map(([k,v])=>`<tr><td>${LAB[k]}</td><td class="n">${v}</td></tr>`).join('');
+    const rn=nearRoad(L.latLng(ll));
+    openFiche(EQ[p.cat][2].replace(/s$/,'').replace('Arrêts','Arrêt').replace('Passages','Passage').replace('Aires','Aire').replace('Accès de service','Accès de service'),p.nom,lieu(p)||'',
+      `<h5>Caractéristiques</h5><table class="kv">${rows}${rn?`<tr><td>Voie desservie</td><td class="n">${rn.nom} (${rn.revet.toLowerCase()})</td></tr><tr><td>Gestionnaire de la voie</td><td class="n">${rn.gest}</td></tr>`:''}</table>
+       <h5>Accidentalité à proximité</h5>${fk([[near.length,'accidents géolocalisés à moins de '+(p.cat==='pk'?'2,5':'1')+' km'],[tues,'tués','r'],[near.filter(r=>r.grav!=='L').length,'accidents graves ou mortels']])}
+       <p class="muted" style="font-size:.8rem;margin-top:6px">Calculé sur l'échantillon d'accidents de la plateforme (2021–2025, données simulées).</p>
+       <h5>Source de la donnée</h5>${srcBadge(p.source)}
+       ${p.cat==='pn'?'<p class="muted" style="font-size:.85rem;margin-top:8px">Position calculée au croisement de la voie ferrée et du réseau routier classé : équipement à confirmer sur le terrain.</p>':''}
+       ${p.cat==='pk'?'<p class="muted" style="font-size:.85rem;margin-top:8px">PK calculé tous les 10 km (5 km sur autoroute) le long du tracé AGEROUTE, depuis l\'extrémité côté Dakar. Il servira de repère pour localiser accidents et signalements.</p>':''}`,EQ[p.cat][0]);
+  }
+  const eqBy={};equip.features.forEach(f=>(eqBy[f.properties.cat]=eqBy[f.properties.cat]||[]).push(f));
+  Object.keys(EQ).forEach(c=>{
+    const mk=f=>{const ll=[f.geometry.coordinates[1],f.geometry.coordinates[0]],p=f.properties;return L.marker(ll,{icon:c==='pk'?pkIcon(p):eqIcon(c),title:p.nom,keyboard:false}).bindTooltip(p.nom).on('click',()=>ficheEq(p,ll))};
+    const list=eqBy[c]||[];
+    groups['eq_'+c]=['station','parking'].includes(c)?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:cl=>L.divIcon({className:'',iconSize:[30,30],html:`<div class="eq-cl" style="background:${EQ[c][0]}">${cl.getChildCount()}</div>`})}).addLayers(list.map(mk)):L.layerGroup(list.map(mk));
+  });
+  /* PK : visibles à partir du zoom 9 */
+  const pkMin=9;map.on('zoomend',()=>{const want=document.querySelector('[data-k="eq_pk"]')?.checked;if(!want)return;map.getZoom()>=pkMin?groups.eq_pk.addTo(map):map.removeLayer(groups.eq_pk)});
+
   const lblCtl=YMap.labels(map,labels);
   /* points */
   const byCat={};pts.features.forEach(f=>(byCat[f.properties.cat]=byCat[f.properties.cat]||[]).push(f));
@@ -263,7 +320,7 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
     if(rd&&rd.type==='AUTOROUTE')return 'ADS (Autoroutes du Sénégal)';
     if(t==='eclairage')return 'Commune';
     if(t==='obstacle'&&!rd)return urb?'Police nationale':'Gendarmerie nationale';
-    if(rd&&rd.type==='RN')return 'AGEROUTE';
+    if(rd)return 'AGEROUTE';
     return 'Commune';
   }
   /* accidents : classification + filtres */
@@ -293,24 +350,29 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
   function showLayer(k){if(!map.hasLayer(groups[k])){groups[k].addTo(map);const i=document.querySelector(`[data-k="${k}"]`);if(i)i.checked=true}}
 
   /* panneau des couches */
-  const def={acc:false,zone:false,heat:false,cct:true,autoecole:false,gare:true,secours:true,sig:true,auto:true,rn:true,regions:true,deps:false,communes:false,labels:true};
-  if(only){Object.keys(def).forEach(k=>{if(!['auto','rn','regions','labels'].includes(k))def[k]=false});def[only==='routes'?'rn':only==='accidents'?'acc':only==='signalements'?'sig':only]=true}
+  const def={acc:false,zone:false,heat:false,cct:true,autoecole:false,gare:true,secours:true,sig:true,auto:true,rn:true,rr:true,rd:false,vf:true,eq_pk:true,eq_station:false,eq_parking:false,eq_arret:false,eq_pn:false,eq_aire:true,eq_acces:false,eq_gare_fer:false,eq_aeroport:true,regions:true,deps:false,communes:false,labels:true};
+  if(only){Object.keys(def).forEach(k=>{if(!['auto','rn','rr','vf','regions','labels'].includes(k))def[k]=false});if(only==='routes'){def.rd=true;def.eq_pk=true}def[only==='routes'?'rn':only==='accidents'?'acc':only==='signalements'?'sig':only]=true}
   document.querySelector('[data-k="acc"]').checked=def.acc;
-  const sw=(k,col,kind)=>kind==='ln'?`<span class="sw ln" style="background:${col}"></span>`:kind==='sq'?`<span class="sw sq" style="border:2px solid ${col}"></span>`:`<span class="sw" style="background:${col}">${ICON[k]?`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ICON[k][1]}</svg>`:''}</span>`;
+  const sw=(k,col,kind)=>k.startsWith('eq:')?`<span class="sw" style="background:${col}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${EQ[k.slice(3)][3]}</svg></span>`:kind==='ln'?`<span class="sw ln" style="background:${col}"></span>`:kind==='sq'?`<span class="sw sq" style="border:2px solid ${col}"></span>`:`<span class="sw" style="background:${col}">${ICON[k]?`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ICON[k][1]}</svg>`:''}</span>`;
   const row=(id,label,col,kind,n,iconKey)=>`<label class="layer sm"><input type="checkbox" data-k="${id}" ${def[id]?'checked':''}>${sw(iconKey||id,col,kind)}${label}${n!=null?`<span class="n"${id==='sig'?' id="n-sig"':''}>${n}</span>`:''}</label>`;
   document.getElementById('lay-risk').innerHTML=row('zone','Zones accidentogènes','#e31b23',null,counts.zone)+row('heat','Densité des zones (chaleur)','linear-gradient(135deg,#f5b700,#e31b23)','x');
   document.getElementById('lay-serv').innerHTML=['cct','autoecole','gare','secours'].map(c=>row(c,LBL[c],ICON[c][0],null,counts[c])).join('');
   document.getElementById('lay-cit').innerHTML=row('sig','Signalements citoyens','#e31b23',null,0,'signal');
-  document.getElementById('lay-ref').innerHTML=row('auto','Autoroutes','#7b3fbf','ln')+row('rn','Routes nationales','#e0a400','ln')+row('regions','Limites régionales','#12161d','sq')+row('deps','Limites départementales','#535a66','sq')+row('communes','Limites communales','#8d94a0','sq')+row('labels','Noms des territoires (selon l\'échelle)','#12161d','x');
+  const kmT=T=>fmt(routes.features.filter(f=>f.properties.type===T).reduce((a,f)=>a+f.properties.km,0))+' km';
+  document.getElementById('lay-net').innerHTML=['AUTOROUTE','RN','RR','RD'].map(T=>row({AUTOROUTE:'auto',RN:'rn',RR:'rr',RD:'rd'}[T],NET[T][2],NET[T][0],'ln',kmT(T))).join('')+row('vf','Voie ferrée','repeating-linear-gradient(90deg,#12161d 0 6px,#fff 6px 10px)','ln',fmt(rail.features.reduce((a,f)=>a+f.properties.km,0))+' km')
+    +'<p class="muted" style="font-size:.78rem;margin:4px 0 0">Trait plein : bitumée · tirets : non bitumée. Numéros affichés selon le zoom.</p>';
+  document.getElementById('lay-eq').innerHTML=Object.keys(EQ).map(c=>row('eq_'+c,EQ[c][2]+(c==='pk'?' (zoom ≥ 9)':''),EQ[c][0],null,(eqBy[c]||[]).length,'eq:'+c)).join('');
+  document.getElementById('lay-ref').innerHTML=row('regions','Limites régionales','#12161d','sq')+row('deps','Limites départementales','#535a66','sq')+row('communes','Limites communales','#8d94a0','sq')+row('labels','Noms des territoires (selon l\'échelle)','#12161d','x');
   drawSig();
-  const order=['communes','deps','regions','rn','auto','heat','zone','acc','sig','gare','cct','secours','autoecole'];
-  order.forEach(k=>{if(def[k])groups[k].addTo(map)});
+  const order=['communes','deps','regions','rd','rr','rn','auto','vf','eq_aeroport','eq_gare_fer','eq_station','eq_parking','eq_arret','eq_acces','eq_aire','eq_pn','heat','zone','acc','sig','gare','cct','secours','autoecole'];
+  order.forEach(k=>{if(def[k]&&!(k==='eq_pk'&&map.getZoom()<pkMin))groups[k].addTo(map)});if(def.eq_pk&&map.getZoom()>=pkMin)groups.eq_pk.addTo(map);updShields();
   lblCtl.toggle(def.labels);
   document.querySelectorAll('.map-side .layer input[data-k]').forEach(i=>i.addEventListener('change',()=>{
     const k=i.dataset.k; if(k==='labels') return lblCtl.toggle(i.checked);
     if(k==='acc'&&i.checked&&st.hidden.size===Object.keys(CLS[st.cls]).length){st.hidden.clear();drawAcc()}
     if(k==='sig'&&i.checked&&sst.hidden.size===Object.keys(SCLS[sst.cls].cats).length){sst.hidden.clear();drawSig()}
-    i.checked?groups[k].addTo(map):map.removeLayer(groups[k]);
+    if(k==='eq_pk'){if(i.checked&&map.getZoom()<pkMin){map.setZoom(pkMin)}else{i.checked?groups[k].addTo(map):map.removeLayer(groups[k])}return}
+    i.checked?groups[k].addTo(map):map.removeLayer(groups[k]);setTimeout(updShields,0);
     if(k==='secours'&&!i.checked) flows.clearLayers();
   }));
 
@@ -349,12 +411,12 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
     </form>`,'#e31b23');
     const f=document.getElementById('sig-form');let photo=null;
     const urb=!rd||!!cm&&ACC.some(r=>r.milieu==='U'&&map.distance(ll,[r.lat,r.lon])<3000);
-    const info=()=>{const t=f.type.value,g=gestionnaire(t,rd,urb);document.getElementById('route-info').innerHTML=`<b>Voie :</b> ${rd?rd.route+' – '+rd.nom:'voirie communale'}${cm?' · commune de '+cm:''}<br><b>Gestionnaire proposé :</b> ${g==='Commune'&&cm?'Commune de '+cm:g}<br><b>Priorité indicative :</b> ${C.PRIORITES[C.TYPES[t].prio][0]}`};
+    const info=()=>{const t=f.type.value,g=gestionnaire(t,rd,urb);document.getElementById('route-info').innerHTML=`<b>Voie :</b> ${rd?rd.nom+' ('+rd.revet.toLowerCase()+')':'voirie communale'}${cm?' · commune de '+cm:''}<br><b>Gestionnaire proposé :</b> ${g==='Commune'&&cm?'Commune de '+cm:g}<br><b>Priorité indicative :</b> ${C.PRIORITES[C.TYPES[t].prio][0]}`};
     f.querySelectorAll('[name=type]').forEach(r=>r.addEventListener('change',info));info();
     f.photo.addEventListener('change',()=>{const file=f.photo.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),k=Math.min(1,480/img.width);c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);photo=c.toDataURL('image/jpeg',.7)};img.src=rd.result};rd.readAsDataURL(file)});
     f.addEventListener('submit',ev=>{ev.preventDefault();map.removeLayer(tmp);
       const t=f.type.value,today=new Date().toISOString().slice(0,10),ref='SIG-'+today.slice(0,4)+'-L'+Date.now().toString().slice(-5);
-      const s={id:ref,type:t,lat:+ll.lat.toFixed(5),lon:+ll.lng.toFixed(5),date:today,statut:'Reçu',priorite:C.TYPES[t].prio,gestionnaire:gestionnaire(t,rd,urb),voie:rd?rd.route+' – '+rd.nom:'Voirie communale',commune:cm,soutiens:0,description:f.desc.value.trim()||'Signalé par un usager',photo,historique:[[today,0,'Plateforme (automatique)','Signalement enregistré, accusé de réception envoyé']]};
+      const s={id:ref,type:t,lat:+ll.lat.toFixed(5),lon:+ll.lng.toFixed(5),date:today,statut:'Reçu',priorite:C.TYPES[t].prio,gestionnaire:gestionnaire(t,rd,urb),voie:rd?rd.nom+' ('+rd.revet.toLowerCase()+')':'Voirie communale',commune:cm,soutiens:0,description:f.desc.value.trim()||'Signalé par un usager',photo,historique:[[today,0,'Plateforme (automatique)','Signalement enregistré, accusé de réception envoyé']]};
       SIG.push(s);store.set(SIG.filter(x=>!x.demo));sst.hidden.clear();showLayer('sig');drawSig();
       document.getElementById('d-body').innerHTML=`<div class="ok-box"><b>Merci, votre signalement est enregistré.</b><br>Référence : ${s.id}. Statut : « Reçu ». Prochaine étape : qualification par l'ANASER, puis transmission à : <b>${gName(s)}</b>.</div><button class="btn btn-j side-btn" type="button" id="see-new">Suivre ce signalement</button><button class="btn btn-d side-btn" type="button" onclick="startPick()">Faire un autre signalement</button>`;document.getElementById('see-new').addEventListener('click',()=>showSig(s))});
     drawer.querySelector('#d-close').addEventListener('click',()=>{if(map.hasLayer(tmp))map.removeLayer(tmp)},{once:true});

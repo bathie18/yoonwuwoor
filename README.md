@@ -29,7 +29,14 @@ Paramètres d'URL utiles pour les démos :
 - **Bilan national 2025** (15 407 accidents, 868 tués, 5 592 blessés graves, 9 536 blessés légers), répartitions par causes, heures, usagers, mois de pointe, axes et chiffres de Dakar, Thiès, Saint-Louis et Matam : ANASER, bilan 2025, repris par *Le Soleil* (2026).
 - **Limites administratives** (14 régions, 45 départements, 433 communes) et **routes nationales** : package R `mapSenegal` (d'après GADM), reprojetées en WGS84 et simplifiées. GADM est libre pour un usage non commercial : prévoir une source ouverte (ANAT, OSM, geoBoundaries) pour la version de production.
 - **Populations** : RGPH-5 (régions), estimations 2024 (départements).
-- **Autoroutes** (A1, Ila Touba) : tracés indicatifs saisis manuellement.
+- **Réseau routier classé** (`data/routes.geojson`) : projet QGIS « reseau_routier » (couches AGEROUTE), limité au Sénégal et simplifié à 25 m — autoroutes (224 km), routes nationales (≈ 6 000 km), régionales (≈ 3 700 km) et départementales (≈ 5 000 km), bitumées ou non, numérotation AGEROUTE.
+- **Voie ferrée** (`data/voie_ferree.geojson`) : projet QGIS, 890 km.
+- **Équipements de la route** (`data/equipements.geojson`, script `tools/build_reseau.py`) :
+  - points kilométriques **calculés** tous les 10 km (5 km sur autoroute) le long des routes nationales et autoroutes, depuis l'extrémité côté Dakar ;
+  - passages à niveau **calculés** à l'intersection voie ferrée × réseau classé (à confirmer sur le terrain) ;
+  - stations-service, parkings et gares ferroviaires réels de la région de Dakar (RGE) ;
+  - stations, parkings, arrêts de bus, aires d'autoroute et accès de service du projet QGIS (couches `fic_*`, **données fictives**) après contrôle : points en mer ou loin de leur réseau écartés, aires recalées sur l'autoroute ;
+  - aéroports du projet QGIS.
 - **Circuit de traitement des signalements** (`assets/js/circuit.js`) : proposition à valider avec le ministère, l'ANASER, l'AGEROUTE, l'ADS, les collectivités et les forces de sécurité.
 - **Barème des amendes** : volontairement non renseigné en attendant le barème officiel (la grille « arrêté n° 009/MEMEFPD/MIT/MSPC » qui circule est togolaise).
 - **Signalements citoyens** : 140 signalements de démonstration ; les nouveaux sont conservés dans le navigateur du visiteur pour la démonstration (version cible : API et back-office de traitement).

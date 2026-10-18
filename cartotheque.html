@@ -41,7 +41,9 @@ Promise.all(['regions','departements','routes','points'].map(n=>YWW.json(`data/$
     return [layer.features.map(f=>`<path d="${pth(f.geometry)}" fill="${col(v(f))}" stroke="#fff" stroke-width="${lvl==='region'?1.2:.6}"/>`).join(''),leg];
   };
   const base=reg.features.map(f=>`<path d="${pth(f.geometry)}" fill="#fff" stroke="#c9c2b4" stroke-width="1"/>`).join('');
-  const roads=rou.features.map(f=>`<path d="${lin(f.geometry)}" fill="none" stroke="#f5b700" stroke-width="2.5"/>`).join('');
+  const RC={AUTOROUTE:['#7b3fbf',3.5],RN:['#e0a400',2.4],RR:['#f26b2b',1.4],RD:['#8b5e34',.8]};
+  const net=types=>rou.features.filter(f=>types.includes(f.properties.type)).sort((a,b)=>'RD RR RN AUTOROUTE'.indexOf(a.properties.type)-'RD RR RN AUTOROUTE'.indexOf(b.properties.type)).map(f=>`<path d="${lin(f.geometry)}" fill="none" stroke="${RC[f.properties.type][0]}" stroke-width="${RC[f.properties.type][1]}"${f.properties.revet==='Non bitumée'?' stroke-dasharray="5 3"':''}/>`).join('');
+  const roads=net(['AUTOROUTE','RN']);
   const dots=(cat,color,r)=>pts.features.filter(f=>f.properties.cat===cat).map(f=>`<circle cx="${sx(f.geometry.coordinates[0]).toFixed(1)}" cy="${sy(f.geometry.coordinates[1]).toFixed(1)}" r="${r(f.properties)}" fill="${color}" fill-opacity=".8" stroke="#fff" stroke-width=".8"/>`).join('');
   const leg1=(items)=>`<g transform="translate(${W-170},56)">${items.map((it,i)=>`<circle cx="7" cy="${i*18}" r="6" fill="${it[0]}"/><text x="18" y="${i*18+4}" font-size="11" fill="#333">${it[1]}</text>`).join('')}</g>`;
   const C=[];
@@ -49,9 +51,9 @@ Promise.all(['regions','departements','routes','points'].map(n=>YWW.json(`data/$
   [i1,l1]=choro(reg,'region','GID_1','taux',2025);C.push(['Taux de mortalité par région','Accidentalité','Nationale','2025',frame('Tués pour 100 000 habitants — 2025',i1,l1),'dataviz.html?echelle=region&indicateur=taux']);
   [i1,l1]=choro(dep,'departement','GID_2','acc',2025);C.push(['Accidents par département','Accidentalité','Départementale','2025',frame('Accidents corporels par département — 2025',i1,l1),'dataviz.html?echelle=departement&indicateur=acc']);
   [i1,l1]=choro(dep,'departement','GID_2','tues',2025);C.push(['Tués par département','Accidentalité','Départementale','2025',frame('Personnes tuées par département — 2025',i1,l1),'dataviz.html?echelle=departement&indicateur=tues']);
-  C.push(['Zones accidentogènes et routes nationales','Risques','Nationale','2021–2025',frame('Zones accidentogènes sur le réseau national',base+roads+dots('zone','#e31b23',p=>2+p.grav*2),leg1([['#e31b23','Zone accidentogène'],['#f5b700','Route nationale']])),'carte.html?couche=zone']);
-  C.push(['Réseau routier national','Infrastructures','Nationale','2025',frame('Les routes nationales du Sénégal',base+roads.replaceAll('stroke-width="2.5"','stroke-width="3.5"'),leg1([['#f5b700','Route nationale (RN1 à RN9)']])),'carte.html?couche=routes']);
-  C.push(['Gares routières','Services','Nationale','2025',frame('Les gares routières',base+roads.replaceAll('#f5b700','#e9dcb0')+dots('gare','#00853f',()=>6),leg1([['#00853f','Gare routière']])),'carte.html?couche=gare']);
+  C.push(['Zones accidentogènes et routes nationales','Risques','Nationale','2021–2025',frame('Zones accidentogènes sur le réseau national',base+roads+dots('zone','#e31b23',p=>2+p.grav*2),leg1([['#e31b23','Zone accidentogène'],['#e0a400','Route nationale'],['#7b3fbf','Autoroute']])),'carte.html?couche=zone']);
+  C.push(['Réseau routier classé','Infrastructures','Nationale','2025',frame('Le réseau routier classé du Sénégal',base+net(['RD','RR','RN','AUTOROUTE']),leg1([['#7b3fbf','Autoroute'],['#e0a400','Route nationale'],['#f26b2b','Route régionale'],['#8b5e34','Route départementale (tirets : non bitumée)']])),'carte.html?couche=routes']);
+  C.push(['Gares routières','Services','Nationale','2025',frame('Les gares routières',base+roads.replaceAll('#e0a400','#e9dcb0').replaceAll('#7b3fbf','#d8cbe8')+dots('gare','#00853f',()=>6),leg1([['#00853f','Gare routière']])),'carte.html?couche=gare']);
   C.push(['Contrôle technique et secours','Services','Nationale','2025',frame('Centres de contrôle technique et de secours',base+dots('cct','#2b6cb0',()=>6)+dots('secours','#ff6b00',()=>4),leg1([['#2b6cb0','Contrôle technique'],['#ff6b00','Centre de secours']])),'carte.html?couche=cct']);
   C.push(['Auto-écoles','Services','Nationale','2025',frame('Les auto-écoles',base+dots('autoecole','#7b3fbf',()=>4),leg1([['#7b3fbf','Auto-école']])),'carte.html?couche=autoecole']);
   const cats=['Toutes',...new Set(C.map(c=>c[1]))];
