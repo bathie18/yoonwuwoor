@@ -201,7 +201,7 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
   groups.deps=L.geoJSON(deps,{interactive:false,style:{color:'#535a66',weight:1.2,dashArray:'5 4',fill:false}});
   groups.communes=L.geoJSON(coms,{interactive:false,style:{color:'#8d94a0',weight:.6,fill:false}});
   /* ---- réseau routier classé (AGEROUTE) et voie ferrée ---- */
-  map.createPane('net').style.zIndex=410;
+  map.createPane('net').style.zIndex=390;
   const NET={AUTOROUTE:['#7b3fbf',6,'Autoroutes'],RN:['#e0a400',4,'Routes nationales'],RR:['#f26b2b',2.6,'Routes régionales'],RD:['#8b5e34',1.7,'Routes départementales']};
   const netTip=p=>`<b>${p.nom}</b><br>${p.revet} · ${fmt1(p.km)} km · gestion ${p.gest}`;
   const netLayer=T=>L.geoJSON({type:'FeatureCollection',features:routes.features.filter(f=>f.properties.type===T)},{pane:'net',
@@ -253,7 +253,7 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
     groups['eq_'+c]=['station','parking'].includes(c)?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:cl=>L.divIcon({className:'',iconSize:[30,30],html:`<div class="eq-cl" style="background:${EQ[c][0]}">${cl.getChildCount()}</div>`})}).addLayers(list.map(mk)):L.layerGroup(list.map(mk));
   });
   /* PK : visibles à partir du zoom 9 */
-  const pkMin=9;map.on('zoomend',()=>{const want=document.querySelector('[data-k="eq_pk"]')?.checked;if(!want)return;map.getZoom()>=pkMin?groups.eq_pk.addTo(map):map.removeLayer(groups.eq_pk)});
+  const pkMin=10;map.on('zoomend',()=>{const want=document.querySelector('[data-k="eq_pk"]')?.checked;if(!want)return;map.getZoom()>=pkMin?groups.eq_pk.addTo(map):map.removeLayer(groups.eq_pk)});
 
   const lblCtl=YMap.labels(map,labels);
   /* points */
@@ -361,7 +361,7 @@ Promise.all(['points.geojson','routes.geojson','regions.geojson','departements.g
   const kmT=T=>fmt(routes.features.filter(f=>f.properties.type===T).reduce((a,f)=>a+f.properties.km,0))+' km';
   document.getElementById('lay-net').innerHTML=['AUTOROUTE','RN','RR','RD'].map(T=>row({AUTOROUTE:'auto',RN:'rn',RR:'rr',RD:'rd'}[T],NET[T][2],NET[T][0],'ln',kmT(T))).join('')+row('vf','Voie ferrée','repeating-linear-gradient(90deg,#12161d 0 6px,#fff 6px 10px)','ln',fmt(rail.features.reduce((a,f)=>a+f.properties.km,0))+' km')
     +'<p class="muted" style="font-size:.78rem;margin:4px 0 0">Trait plein : bitumée · tirets : non bitumée. Numéros affichés selon le zoom.</p>';
-  document.getElementById('lay-eq').innerHTML=Object.keys(EQ).map(c=>row('eq_'+c,EQ[c][2]+(c==='pk'?' (zoom ≥ 9)':''),EQ[c][0],null,(eqBy[c]||[]).length,'eq:'+c)).join('');
+  document.getElementById('lay-eq').innerHTML=Object.keys(EQ).map(c=>row('eq_'+c,EQ[c][2]+(c==='pk'?' (zoom ≥ 10)':''),EQ[c][0],null,(eqBy[c]||[]).length,'eq:'+c)).join('');
   document.getElementById('lay-ref').innerHTML=row('regions','Limites régionales','#12161d','sq')+row('deps','Limites départementales','#535a66','sq')+row('communes','Limites communales','#8d94a0','sq')+row('labels','Noms des territoires (selon l\'échelle)','#12161d','x');
   drawSig();
   const order=['communes','deps','regions','rd','rr','rn','auto','vf','eq_aeroport','eq_gare_fer','eq_station','eq_parking','eq_arret','eq_acces','eq_aire','eq_pn','heat','zone','acc','sig','gare','cct','secours','autoecole'];
